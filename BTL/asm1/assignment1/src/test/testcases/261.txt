@@ -1,0 +1,11 @@
+Class Statements {
+            ifStatement() {
+                If (x == 0) {
+                    Out.print("Cool");
+                }
+                Elseif (x == 1) {
+                    Out.print("Not cool\n");
+                }
+                Else {} Else {}
+            }
+        }

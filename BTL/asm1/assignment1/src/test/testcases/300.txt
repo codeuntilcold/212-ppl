@@ -1,0 +1,30 @@
+
+        ## Student ID : 1910101
+        ##
+        Class Shape {
+            Val $numOfShape, _nVertex: Int = 0, 5 + 2;
+            Val immutableAttribute: Int = 0;
+            Var length, width: Int;
+
+            Constructor(len: Int; wid: Int) {
+                Self.length = len;
+                Self.width = wid;
+            }
+
+            Destructor() {}
+
+            $getNumOfShape() {
+                Return Shape::$numOfShape;
+            }
+        }
+        Class Rectangle: Shape {
+            getArea() {
+                Return Self.length * Self.width;
+            }
+        }
+        Class Program {
+            main() {
+                Out.printInt(Shape::$numOfShape);
+            }
+        }
+        

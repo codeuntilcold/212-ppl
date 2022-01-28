@@ -1,0 +1,5 @@
+Class Statements {
+            ifStatement() {
+                If (x == 0) print("Cool");
+            }
+        }

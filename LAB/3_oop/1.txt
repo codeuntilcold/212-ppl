@@ -1,0 +1,43 @@
+class Exp(): pass
+
+class BinExp(Exp):
+    def __init__(self, operand1, op, operand2):
+        self.op = op
+        self.o1 = operand1
+        self.o2 = operand2
+    def eval(self):
+        operand1 = self.o1.eval()
+        operand2 = self.o2.eval()
+        if self.op == "+":
+            return operand1 + operand2
+        elif self.op == "-":
+            return operand1 - operand2
+        elif self.op == "*":
+            return operand1 * operand2
+        elif self.op == "/":
+            return operand1 / operand2
+
+class UnExp(Exp):
+    def __init__(self, op, operand):
+        self.op = op
+        self.operand = operand
+    
+    def eval(self):
+        operand = self.operand.eval()
+        if self.op == "+":
+            return operand
+        elif self.op == "-":
+            return -operand
+
+class IntLit(Exp):
+    def __init__(self, val):
+        self.val = val
+    def eval(self):
+        return self.val
+
+
+class FloatLit(Exp):
+    def __init__(self, val):
+        self.val = val
+    def eval(self):
+        return self.val

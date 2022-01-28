@@ -1,0 +1,5 @@
+Class Statements {
+            forInStatement() {
+                Continue;
+            }
+        }

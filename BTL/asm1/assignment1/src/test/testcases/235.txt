@@ -1,0 +1,5 @@
+Class Ops {
+            isThisValid(x: Point; r: Int) {
+
+            }
+        }

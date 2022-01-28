@@ -1,0 +1,11 @@
+Class Expr {
+            main() {
+                expr1 = a + b;
+                expr2 = a * b;
+                expr3 = scalar.var + not.scalar.var;
+                expr4 = Lib.random() * 3.14 + probability;
+                expr5 = New Point() + New Point()[5];
+                expr7 = Null;
+                expr6 = arraymem[5] + (arraymem[5])::$highestofall;
+            }
+        }

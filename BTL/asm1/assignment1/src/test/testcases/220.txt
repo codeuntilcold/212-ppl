@@ -1,0 +1,5 @@
+Class Point {
+            Var x, y: Int = 0.5, 0.5*2;
+
+            Constructor(x: Int; y: Int) {}
+        }

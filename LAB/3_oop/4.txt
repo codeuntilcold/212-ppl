@@ -1,0 +1,45 @@
+class Eval:
+    def visit(self, exp):
+        return exp.accept(self)
+    def visitIntLit(self, exp):
+        return exp.value
+    def visitFloatLit(self, exp):
+        return exp.value
+    def visitUnExp(self, exp):
+        if exp.op == "+":
+            return self.visit(exp.operand)
+        elif exp.op == "-":
+            return -self.visit(exp.operand)
+    def visitBinExp(self, exp):
+        if exp.op == "+":
+            return self.visit(exp.left) + self.visit(exp.right)
+        elif exp.op == "-":
+            return self.visit(exp.left) - self.visit(exp.right)
+        elif exp.op == "*":
+            return self.visit(exp.left) * self.visit(exp.right)
+        elif exp.op == "/":
+            return self.visit(exp.left) / self.visit(exp.right)
+    
+class PrintPrefix:
+    def visit(self, exp):
+        return exp.accept(self)
+    def visitIntLit(self, exp):
+        return str(exp.value)
+    def visitFloatLit(self, exp):
+        return str(exp.value)
+    def visitUnExp(self, exp):
+        return exp.op + ". " + self.visit(exp.operand)
+    def visitBinExp(self, exp):
+        return exp.op + " " + self.visit(exp.left) + " " + self.visit(exp.right)
+        
+class PrintPostfix:
+    def visit(self, exp):
+        return exp.accept(self)
+    def visitIntLit(self, exp):
+        return str(exp.value)
+    def visitFloatLit(self, exp):
+        return str(exp.value)
+    def visitUnExp(self, exp):
+        return self.visit(exp.operand) + " " + exp.op + "."
+    def visitBinExp(self, exp):
+        return self.visit(exp.left) + " " + self.visit(exp.right) + " " + exp.op

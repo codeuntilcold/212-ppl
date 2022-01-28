@@ -1,0 +1,8 @@
+Class Ops {
+            isThisValid(x: Point; r: Int) {
+                newX = x.translateX(r);
+                newY = y.translateY(r);
+
+                Return New Point(newX, newY);
+            }
+        }

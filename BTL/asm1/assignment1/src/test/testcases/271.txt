@@ -1,0 +1,7 @@
+Class Statements {
+            forInStatement() {
+                If (i == 5) {
+                    Break;
+                }
+            }
+        }

@@ -1,0 +1,5 @@
+Class Statements {
+            Destructor() {
+                x[x.length - 1] = "Value of last element";
+            }
+        }

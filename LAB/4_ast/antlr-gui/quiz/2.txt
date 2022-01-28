@@ -1,0 +1,19 @@
+class ASTGeneration(MPVisitor):
+
+    def visitProgram(self,ctx:MPParser.ProgramContext):
+        return 1 + ctx.vardecls().accept(self)
+        
+    def visitVardecls(self,ctx:MPParser.VardeclsContext):
+        return 1 + ctx.vardecl().accept(self) + ctx.vardecltail().accept(self)
+
+    def visitVardecltail(self,ctx:MPParser.VardecltailContext): 
+        return 1 + ctx.vardecl().accept(self) + ctx.vardecltail().accept(self) if ctx.getChildCount() == 2 else 1
+
+    def visitVardecl(self,ctx:MPParser.VardeclContext): 
+        return 1 + ctx.mptype().accept(self) + ctx.ids().accept(self)
+
+    def visitMptype(self,ctx:MPParser.MptypeContext):
+        return 1
+
+    def visitIds(self,ctx:MPParser.IdsContext):
+        return 1 + ctx.ids().accept(self) if ctx.getChildCount() == 3 else 1

@@ -1,0 +1,49 @@
+class ASTGeneration(MPVisitor):
+
+    def visitProgram(self,ctx:MPParser.ProgramContext):
+        return self.visit(ctx.exp())
+
+
+    def visitExp(self,ctx:MPParser.ExpContext):
+       
+        numop = len(ctx.ASSIGN())
+        
+        ret = self.visit(ctx.term(numop))
+        for i in range(0, numop):
+            ret = Binary(ctx.ASSIGN(numop - i - 1).getText(),
+                self.visit(ctx.term(numop - i - 1)),
+                ret
+            )
+        return ret
+
+
+    def visitTerm(self,ctx:MPParser.TermContext): 
+        if ctx.getChildCount() == 3:
+            return Binary(ctx.COMPARE().getText(), 
+                self.visit(ctx.factor(0)), 
+                self.visit(ctx.factor(1)))
+        else:
+            return self.visit(ctx.factor(0))
+
+
+    def visitFactor(self,ctx:MPParser.FactorContext):
+        numop = len(ctx.ANDOR())
+            
+        ret = self.visit(ctx.operand(numop))
+        for i in range(0, numop):
+            ret = Binary(ctx.ANDOR(numop - i - 1).getText(),
+                self.visit(ctx.operand(numop - i - 1)),
+                ret
+            )
+        return ret
+
+
+    def visitOperand(self,ctx:MPParser.OperandContext):
+        if ctx.getChildCount() == 3:
+            return self.visit(ctx.exp())
+        elif ctx.ID():
+            return Id(ctx.ID().getText())
+        elif ctx.INTLIT():
+            return IntLiteral(int(ctx.INTLIT().getText()))
+        elif ctx.BOOLIT():
+            return BooleanLiteral(bool(ctx.BOOLIT().getText()))

@@ -1,0 +1,11 @@
+T__0=1
+T__1=2
+INTLIT=3
+BOOLIT=4
+ANDOR=5
+ASSIGN=6
+COMPARE=7
+ID=8
+WS=9
+'('=1
+')'=2

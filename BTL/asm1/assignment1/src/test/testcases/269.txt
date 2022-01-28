@@ -1,0 +1,7 @@
+Class Statements {
+            forInStatement() {
+                Foreach (xr In 5 .. 2) {
+                    Out.printInt(arr[x]);
+                }
+            }
+        }

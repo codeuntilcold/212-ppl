@@ -1,0 +1,5 @@
+Class Ops {
+            static() {
+                Return school::$numOfClass;
+            }
+        }

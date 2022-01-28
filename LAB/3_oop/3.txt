@@ -1,0 +1,36 @@
+class Eval:
+    def visit(self, exp):
+        if isinstance(exp, (IntLit, FloatLit)):
+            return exp.value
+        elif isinstance(exp, UnExp):
+            if exp.op == "+":
+                return self.visit(exp.operand)
+            elif exp.op == "-":
+                return -self.visit(exp.operand)
+        elif isinstance(exp, BinExp):
+            if exp.op == "+":
+                return self.visit(exp.left) + self.visit(exp.right)
+            elif exp.op == "-":
+                return self.visit(exp.left) - self.visit(exp.right)
+            elif exp.op == "*":
+                return self.visit(exp.left) * self.visit(exp.right)
+            elif exp.op == "/":
+                return self.visit(exp.left) / self.visit(exp.right)
+    
+class PrintPrefix:
+    def visit(self, exp):
+        if isinstance(exp, (IntLit, FloatLit)):
+            return exp.value
+        elif isinstance(exp, UnExp):
+            return exp.op + ". " + str(self.visit(exp.operand))
+        elif isinstance(exp, BinExp):
+            return exp.op + " " + str(self.visit(exp.left)) + " " + str(self.visit(exp.right))
+        
+class PrintPostfix:
+    def visit(self, exp):
+        if isinstance(exp, (IntLit, FloatLit)):
+            return exp.value
+        elif isinstance(exp, UnExp):
+            return exp.op + ". " + str(self.visit(exp.operand))
+        elif isinstance(exp, BinExp):
+            return str(self.visit(exp.left)) + " " + str(self.visit(exp.right)) + exp.op

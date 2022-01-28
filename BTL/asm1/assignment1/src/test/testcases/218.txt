@@ -1,0 +1,7 @@
+Class Point {
+            Var x, y: Int;
+
+            Constructor(x: Int; y: Int) {}
+
+            Destructor(x: Int; y: Int) {}
+        }

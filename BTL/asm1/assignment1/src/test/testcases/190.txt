@@ -1,0 +1,1 @@
+Self.width = 10*3; Self.height = 10
