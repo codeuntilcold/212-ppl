@@ -395,11 +395,11 @@ ILLEGAL_ESCAPE
 
 UNCLOSE_STRING
 	: ["] STR_CHAR*? EOF {raise UncloseString(self.text[1:])}
-	| ["] STR_CHAR*? [\n\r] {raise UncloseString(self.text[1:-1])}
+	| ["] STR_CHAR*? [\b\f\n\r\t\\] {raise UncloseString(self.text[1:-1])}
 	;
 
 fragment STR_CHAR
-	: ~["\n\r\\] | STR_ESC
+	: ~["\b\f\n\r\t\\] | STR_ESC
 	;
 fragment ESC_ILLEGAL
 	: '\\' ~[bfrnt\\] | '\\'

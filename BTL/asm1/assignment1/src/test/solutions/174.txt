@@ -1,1 +1,1 @@
-a,::,a,<EOF>
+Illegal Escape In String: String weird encounter \

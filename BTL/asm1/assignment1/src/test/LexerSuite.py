@@ -230,10 +230,10 @@ class LexerSuite(unittest.TestCase):
         self.assertTrue(TestLexer.test("\"String in the town!@#$%^&*(\"","String in the town!@#$%^&*(,<EOF>",172))
 
     def test_173(self):
-        self.assertTrue(TestLexer.test("@decorator.life","Error Token @",173))
+        self.assertTrue(TestLexer.test(" \"String weird encounter \b \" ","Unclosed String: String weird encounter ",173))
 
     def test_174(self):
-        self.assertTrue(TestLexer.test("a::a","a,::,a,<EOF>",174))
+        self.assertTrue(TestLexer.test(" \"String weird encounter \\\b \" ","Illegal Escape In String: String weird encounter \",174))
 
     def test_175(self):
         self.assertTrue(TestLexer.test("one..two","one,..,two,<EOF>",175))
