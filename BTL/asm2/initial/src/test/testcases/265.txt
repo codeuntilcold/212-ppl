@@ -1,0 +1,7 @@
+Class Statements {
+            forInStatement() {
+                Foreach (index In arr.start() .. arr.end()) {
+                    Out.print(arr[index]);
+                }
+            }
+        }

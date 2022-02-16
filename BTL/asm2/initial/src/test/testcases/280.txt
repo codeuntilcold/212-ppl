@@ -1,0 +1,10 @@
+Class Expr {
+            main() {
+                expr = arraymem[5] + AllConst::$highestofall;
+                expr1 = awesomeNumber + $notSoAwesome;
+                expr2 = Self.member + $selfMemberMax();
+                expr3 = -15;
+                expr4 = .15E15 + 10E11;
+                expr5 = _1234 + 0x0;
+            }
+        }

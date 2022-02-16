@@ -1,0 +1,5 @@
+Class Ops {
+            objectCreation() {
+                Return New Square(point).defaultArea();
+            }
+        }

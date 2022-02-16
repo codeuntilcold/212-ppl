@@ -1,0 +1,5 @@
+Class Ops {
+            objectCreation() {
+                Return (x[index]).value;
+            }
+        }

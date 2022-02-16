@@ -1,0 +1,5 @@
+Class Statements {
+            forInStatement() {
+                Return (point[0]).getX().toMetrics()[5];
+            }
+        }

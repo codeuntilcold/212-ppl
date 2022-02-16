@@ -1,1 +1,3 @@
-int main( {}
+Class A {
+            Var x: Int;
+        }

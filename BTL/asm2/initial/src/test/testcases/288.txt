@@ -1,0 +1,5 @@
+Class Expr {
+            main() {
+                Return (1 + 2).map(x * x);
+            }
+        }

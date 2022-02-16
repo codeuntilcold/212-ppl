@@ -1,0 +1,1 @@
+ "Extremely weird string indeed \1"

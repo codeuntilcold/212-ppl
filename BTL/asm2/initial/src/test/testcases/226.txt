@@ -1,0 +1,4 @@
+Class StringLit {
+            Var name: String = "Darwin
+            and his creation";
+        }

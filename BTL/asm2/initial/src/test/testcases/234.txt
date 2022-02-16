@@ -1,0 +1,13 @@
+Class Ops {
+            isThisValid() {
+                Var x: Boolean = 1 || 2;
+                Var y: Boolean = False;
+
+                z = !x && y;
+                
+                z = x +. y;  ## No type checking and stuff ##
+                z = x + y;
+
+                z = x ==. y;
+            }
+        }

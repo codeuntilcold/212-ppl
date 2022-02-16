@@ -1,0 +1,7 @@
+Class Statements {
+            forInStatement() {
+                Foreach (class::$var In 5 .. 2) {
+                    Suite.printInt(index);
+                }
+            }
+        }

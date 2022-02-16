@@ -1,0 +1,5 @@
+Class Ops {
+            draw(x: Point; r: Int) {
+                Circle.$draw(x, r);
+            }
+        }

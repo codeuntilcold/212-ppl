@@ -1,0 +1,8 @@
+Class Point {
+            Var x, y: Int;
+
+            Constructor(x: Int; y: Int) {
+                getPoint() {}   ## Can't have method declaration ##
+                Return x;
+            }
+        }

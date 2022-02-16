@@ -25,6 +25,7 @@ class ASTGeneration(MPVisitor):
         else:
             return self.visit(ctx.factor(0))
 
+    op0 (op1 (op2 f0 f3) f2) f1
 
     def visitFactor(self,ctx:MPParser.FactorContext):
         numop = len(ctx.ANDOR())

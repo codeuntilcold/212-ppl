@@ -1,0 +1,7 @@
+Class Statements {
+            forInStatement() {
+                For (index In 1 .. 10) {
+
+                }
+            }
+        }

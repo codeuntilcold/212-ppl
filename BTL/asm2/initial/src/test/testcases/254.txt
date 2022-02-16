@@ -1,0 +1,5 @@
+Class Statements {
+            Destructor() {
+                x + 5 = 10;
+            }
+        }

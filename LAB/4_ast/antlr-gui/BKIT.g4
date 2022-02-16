@@ -1,25 +1,61 @@
 grammar BKIT;
 
-program: exp EOF;
+program: decl+ EOF;
 
-exp: (term ASSIGN)* term;
+cseltype: INT | FLOAT | BOOLEAN;
 
-term: factor COMPARE factor | factor;
+decl: vardecl decltail | constdecl decltail | funcdecl decltail;
 
-factor: operand (ANDOR operand)*; 
+decltail: vardecl decltail | constdecl decltail | funcdecl decltail | ; 
 
-operand: ID | INTLIT | BOOLIT | '(' exp ')';
+vardecl: LET single_vardecls SEMI;
 
-INTLIT: [0-9]+ ;
+single_vardecls: single_vardecl single_vardecltail;
 
-BOOLIT: 'True' | 'False' ;
+single_vardecl: ID COLON cseltype;
 
-ANDOR: 'and' | 'or' ;
+single_vardecltail: COMMA single_vardecl single_vardecltail | ;
 
-ASSIGN: '+=' | '-=' | '&=' | '|=' | ':=' ;
+constdecl: CONST single_constdecl SEMI;
 
-COMPARE: '=' | '<>' | '>=' | '<=' | '<' | '>' ;
+single_constdecl: ID COLON cseltype EQ expr;
 
-ID: [a-z]+ ;
+expr: INTLIT | FLOATLIT | BOOLEANLIT;
 
-WS: [ \t\r\n] -> skip;
+funcdecl: FUNCTION ID LR paramlist RR SEMI;
+
+paramlist: single_vardecls | ;
+
+LET: 'Let';
+
+CONST: 'Constant';
+
+FUNCTION: 'Function';
+
+SEMI: ';';
+
+COLON: ':';
+
+COMMA: ',';
+
+LR: '(';
+
+RR: ')';
+
+EQ: '=';
+
+INT: 'Int';
+
+FLOAT: 'Float';
+
+BOOLEAN: 'Boolean';
+
+INTLIT: [0-9]+;
+
+FLOATLIT: [0-9]+ '.' [0-9]+;
+
+BOOLEANLIT: 'True' | 'False';
+
+ID: [a-zA-Z]+;
+
+WS: [ \t\r\n\f]+ -> skip;

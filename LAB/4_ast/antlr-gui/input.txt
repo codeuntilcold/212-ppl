@@ -1,1 +1,6 @@
-a or b and True
+Let a: Int, b: Int;
+Let a: Int;
+Constant a: Int = 0;
+Let a: Int;
+Constant a: Int = 0;
+Let a: Int;
