@@ -186,10 +186,10 @@ assignStat				// does a = b = c holds ??????????
 	;
 ifStat
 	: IF LP expr RP blockStat elseifList
-	| IF LP expr RP blockStat elseifList ELSE blockStat
 	;
 elseifList
 	: ELSEIF LP expr RP blockStat elseifList
+	| ELSE blockStat
 	|
 	;
 forStat
