@@ -1,1 +1,1 @@
-Program([])
+Program([ClassDecl(Id(A),[])])

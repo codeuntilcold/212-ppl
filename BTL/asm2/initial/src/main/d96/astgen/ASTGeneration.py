@@ -5,49 +5,75 @@ from AST import *
 
 class ASTGeneration(D96Visitor):
     
-    # Visit a parse tree produced by D96Parser#program.
+    # List[ClassDecl]
     def visitProgram(self, ctx:D96Parser.ProgramContext):
-        return Program([])
+        return Program(self.visit(ctx.classDecls()))
 
 
     # Visit a parse tree produced by D96Parser#classDecls.
     def visitClassDecls(self, ctx:D96Parser.ClassDeclsContext):
-        return self.visitChildren(ctx)
+        return [self.visit(ctx.classDecl())] + self.visit(ctx.classDecls()) if ctx.getChildCount() == 2 else [self.visit(ctx.classDecl())]
 
 
     # Visit a parse tree produced by D96Parser#classDecl.
     def visitClassDecl(self, ctx:D96Parser.ClassDeclContext):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 5:
+            return ClassDecl(
+                Id(ctx.ID(0).getText()),
+                self.visit(ctx.memDeclList()),
+            )
+        else:
+            return ClassDecl(
+                Id(ctx.ID(0).getText()),
+                self.visit(ctx.memDeclList()),
+                Id(ctx.ID(1).getText())
+            )
 
 
     # Visit a parse tree produced by D96Parser#memDeclList.
     def visitMemDeclList(self, ctx:D96Parser.MemDeclListContext):
-        return self.visitChildren(ctx)
+        return [] if ctx.getChildCount() == 0 else self.visit(ctx.memDecl()) + self.visit(ctx.memDeclList())
 
 
     # Visit a parse tree produced by D96Parser#memDecl.
     def visitMemDecl(self, ctx:D96Parser.MemDeclContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.attrDecl()) if ctx.attrDecl() else self.visit(ctx.methodDecl())
 
 
     # Visit a parse tree produced by D96Parser#attrDecl.
     def visitAttrDecl(self, ctx:D96Parser.AttrDeclContext):
-        return self.visitChildren(ctx)
-
+        attrs = self.visit(ctx.attrs()) if ctx.attrs() else self.visit(ctx.attrsInit())
+        return [ 
+            AttributeDecl(
+                Static() if decl[0].name[0] == '$' else Instance(), 
+                ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
+            ) for decl in attrs
+        ]
 
     # Visit a parse tree produced by D96Parser#attrs.
     def visitAttrs(self, ctx:D96Parser.AttrsContext):
-        return self.visitChildren(ctx)
+        # [ (Id(), Type(), None) ]
+        idents = self.visit(ctx.memIds())
+        typ = self.visit(ctx.typeDecl())
+        return [ (idname, typ, None) for idname in idents ]
 
 
     # Visit a parse tree produced by D96Parser#memIds.
     def visitMemIds(self, ctx:D96Parser.MemIdsContext):
-        return self.visitChildren(ctx)
+        return [self.visit(ctx.memId())] if ctx.getChildCount() == 1 else [self.visit(ctx.memId())] + self.visit(ctx.memIds())
 
 
     # Visit a parse tree produced by D96Parser#attrsInit.
     def visitAttrsInit(self, ctx:D96Parser.AttrsInitContext):
-        return self.visitChildren(ctx)
+        # [ (Id(), Type(), Expr()) ]
+        ident = self.visit(ctx.memId())
+        rhs = self.visit(ctx.expr())
+        if ctx.attrsInit():
+            rest = self.visit(ctx.attrsInit())
+            typ = rest[0][1]
+            return [ (ident, typ, rhs) ] + rest
+        else:
+            return [( ident, self.visit(ctx.typeDecl()), rhs )]
 
 
     # Visit a parse tree produced by D96Parser#methodDecl.
@@ -207,17 +233,23 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#typeDecl.
     def visitTypeDecl(self, ctx:D96Parser.TypeDeclContext):
-        return self.visitChildren(ctx)
+        return ClassType(Id(ctx.ID().getText())) if ctx.ID() else self.visit(ctx.getChild(0))
 
 
     # Visit a parse tree produced by D96Parser#arrayType.
     def visitArrayType(self, ctx:D96Parser.ArrayTypeContext):
-        return self.visitChildren(ctx)
+        return ArrayType(
+            int(ctx.INTLIT().getText()),
+            self.visit(ctx.getChild(2))
+        )
 
 
     # Visit a parse tree produced by D96Parser#primitiveType.
     def visitPrimitiveType(self, ctx:D96Parser.PrimitiveTypeContext):
-        return self.visitChildren(ctx)
+        if ctx.BOOLTYPE(): return BoolType()
+        elif ctx.INTTYPE(): return IntType()
+        elif ctx.FLOATTYPE(): return FloatType()
+        elif ctx.STRINGTYPE(): return StringType()
 
 
     # Visit a parse tree produced by D96Parser#arrayLit.
@@ -242,4 +274,4 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#memId.
     def visitMemId(self, ctx:D96Parser.MemIdContext):
-        return self.visitChildren(ctx)
+        return Id(ctx.getChild(0).getText())    # may have $ in name?
