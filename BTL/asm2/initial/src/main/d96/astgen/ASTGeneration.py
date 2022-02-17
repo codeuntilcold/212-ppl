@@ -78,155 +78,278 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#methodDecl.
     def visitMethodDecl(self, ctx:D96Parser.MethodDeclContext):
-        return self.visitChildren(ctx)
-
+        if ctx.CONSTRUCTOR(): 
+            return MethodDecl( 
+                Instance(),
+                Id("Constructor"),
+                self.visit(ctx.paramList()),
+                self.visit(ctx.blockStat())
+            )
+        elif ctx.DESTRUCTOR():
+            return MethodDecl(
+                Instance(),
+                Id("Destructor"),
+                [],
+                self.visit(ctx.blockStat())
+            )
+        else:
+            funcname = self.visit(ctx.memId())
+            return MethodDecl(
+                Static() if funcname.name[0] == '$' else Instance(),
+                funcname,
+                self.visit(ctx.paramList()),
+                self.visit(ctx.blockStat())
+            )
 
     # Visit a parse tree produced by D96Parser#paramList.
     def visitParamList(self, ctx:D96Parser.ParamListContext):
-        return self.visitChildren(ctx)
+        return [] if ctx.getChildCount() == 0 else self.visit(ctx.params())
 
 
     # Visit a parse tree produced by D96Parser#params.
     def visitParams(self, ctx:D96Parser.ParamsContext):
-        return self.visitChildren(ctx)
+        return [self.visit(ctx.param())] if ctx.getChildCount() == 1 else [self.visit(ctx.param())] + self.visit(ctx.params())
 
 
     # Visit a parse tree produced by D96Parser#param.
     def visitParam(self, ctx:D96Parser.ParamContext):
-        return self.visitChildren(ctx)
+        idents = self.visit(ctx.ids())
+        return [VarDecl(
+            name,
+            self.visit(ctx.typeDecl()),
+        ) for name in idents]
 
 
     # Visit a parse tree produced by D96Parser#blockStat.
     def visitBlockStat(self, ctx:D96Parser.BlockStatContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.statList())
 
 
     # Visit a parse tree produced by D96Parser#statList.
     def visitStatList(self, ctx:D96Parser.StatListContext):
-        return self.visitChildren(ctx)
+        return [] if ctx.getChildCount() == 0 else self.visit(ctx.stat()) + self.visit(ctx.statList())
 
 
     # Visit a parse tree produced by D96Parser#expr.
     def visitExpr(self, ctx:D96Parser.ExprContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expr1(0)) if ctx.getChildCount() == 1 else BinaryOp(
+            ctx.getChild(1).getText(),
+            self.visit(ctx.expr1(0)),
+            self.visit(ctx.expr1(1))
+        )
 
 
     # Visit a parse tree produced by D96Parser#expr1.
     def visitExpr1(self, ctx:D96Parser.Expr1Context):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expr2(0)) if ctx.getChildCount() == 1 else BinaryOp(
+            ctx.getChild(1).getText(),
+            self.visit(ctx.expr2(0)),
+            self.visit(ctx.expr2(1))
+        )
 
 
     # Visit a parse tree produced by D96Parser#expr2.
     def visitExpr2(self, ctx:D96Parser.Expr2Context):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expr3()) if ctx.getChildCount() == 1 else BinaryOp(
+            ctx.getChild(1).getText(),
+            self.visit(ctx.expr2()),
+            self.visit(ctx.expr3())
+        )
 
 
     # Visit a parse tree produced by D96Parser#expr3.
     def visitExpr3(self, ctx:D96Parser.Expr3Context):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expr4()) if ctx.getChildCount() == 1 else BinaryOp(
+            ctx.getChild(1).getText(),
+            self.visit(ctx.expr3()),
+            self.visit(ctx.expr4())
+        )
 
 
     # Visit a parse tree produced by D96Parser#expr4.
     def visitExpr4(self, ctx:D96Parser.Expr4Context):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expr5()) if ctx.getChildCount() == 1 else BinaryOp(
+            ctx.getChild(1).getText(),
+            self.visit(ctx.expr4()),
+            self.visit(ctx.expr5())
+        )
 
 
     # Visit a parse tree produced by D96Parser#expr5.
     def visitExpr5(self, ctx:D96Parser.Expr5Context):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expr6()) if ctx.getChildCount() == 1 else UnaryOp(
+            ctx.getChild(0).getText(),
+            self.visit(ctx.expr5())
+        )
 
 
     # Visit a parse tree produced by D96Parser#expr6.
     def visitExpr6(self, ctx:D96Parser.Expr6Context):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.expr7()) if ctx.getChildCount() == 1 else UnaryOp(
+            ctx.getChild(0).getText(),
+            self.visit(ctx.expr6())
+        )
 
+
+
+    """
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+    """
 
     # Visit a parse tree produced by D96Parser#expr7.
     def visitExpr7(self, ctx:D96Parser.Expr7Context):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 1:
+            self.visit(ctx.expr8())
+        else:
+            return self.visitChildren(ctx)
 
 
     # Visit a parse tree produced by D96Parser#expr8.
     def visitExpr8(self, ctx:D96Parser.Expr8Context):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 1:
+            return self.visit(ctx.expr9())
+        elif ctx.getChildCount() == 3:
+            return FieldAccess( self.visit(ctx.expr8()), Id(ctx.ID().getText()) )
+        else:
+            return CallExpr( self.visit(ctx.expr8()), Id(ctx.ID().getText()), self.visit(ctx.argList()) )
 
 
     # Visit a parse tree produced by D96Parser#expr9.
     def visitExpr9(self, ctx:D96Parser.Expr9Context):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 1:
+            return self.visit(ctx.expr10())
+        elif ctx.getChildCount() == 3:
+            return FieldAccess( Id(ctx.ID().getText()), Id(ctx.STATIC_ID().getText() ) )
+        else:
+            return CallExpr( Id(ctx.ID().getText()), Id(ctx.STATIC_ID().getText()), self.visit(ctx.argList()) )
 
 
     # Visit a parse tree produced by D96Parser#expr10.
     def visitExpr10(self, ctx:D96Parser.Expr10Context):
-        return self.visitChildren(ctx)
-
+        return self.visit(ctx.operand()) if ctx.getChildCount() == 1 else NewExpr(
+            Id(ctx.ID().getText()),
+            self.visit(ctx.argList())
+        )
 
     # Visit a parse tree produced by D96Parser#operand.
     def visitOperand(self, ctx:D96Parser.OperandContext):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 3: return self.visit(ctx.expr())
+        elif ctx.ID(): return Id(ctx.ID().getText())
+        elif ctx.SELF(): return SelfLiteral()
+        elif ctx.NULL(): return NullLiteral()
+        elif ctx.INTLIT(): return IntLiteral(int(ctx.INTLIT().getText()))
+        elif ctx.FLOATLIT(): return FloatLiteral(float(ctx.FLOATLIT().getText()))
+        elif ctx.BOOLLIT(): return BooleanLiteral(bool(ctx.BOOLLIT().getText()))
+        elif ctx.STRINGLIT(): return StringLiteral(ctx.STRINGLIT().getText())
+        else: return self.visit(ctx.arrayLit())
 
 
     # Visit a parse tree produced by D96Parser#stat.
     def visitStat(self, ctx:D96Parser.StatContext):
-        return self.visitChildren(ctx)
-
+        if ctx.RETURN():
+            return [Return()] if ctx.getChildCount() == 2 else [Return(self.visit(ctx.expr()))]
+        elif ctx.BREAK(): return [Break()]
+        elif ctx.CONTINUE(): return [Continue()]
+        else: return self.visit(ctx.getChild(0))
 
     # Visit a parse tree produced by D96Parser#declStat.
     def visitDeclStat(self, ctx:D96Parser.DeclStatContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.varDecl())
 
 
     # Visit a parse tree produced by D96Parser#varDecl.
     def visitVarDecl(self, ctx:D96Parser.VarDeclContext):
-        return self.visitChildren(ctx)
+        variables = self.visit(ctx.variables()) if ctx.variables() else self.visit(ctx.varsInit())
+        return [ 
+            ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
+            for decl in variables
+        ]
 
 
     # Visit a parse tree produced by D96Parser#variables.
     def visitVariables(self, ctx:D96Parser.VariablesContext):
-        return self.visitChildren(ctx)
+        # [ (Id(), Type(), None) ]
+        idents = self.visit(ctx.ids())
+        typ = self.visit(ctx.typeDecl())
+        return [ (idname, typ, None) for idname in idents ]
 
 
     # Visit a parse tree produced by D96Parser#ids.
     def visitIds(self, ctx:D96Parser.IdsContext):
-        return self.visitChildren(ctx)
+        return [ Id(ctx.ID().getText()) ] if ctx.getChildCount() == 1 else [ Id(ctx.ID().getText()) ] + self.visit(ctx.ids())
 
 
     # Visit a parse tree produced by D96Parser#varsInit.
     def visitVarsInit(self, ctx:D96Parser.VarsInitContext):
-        return self.visitChildren(ctx)
+        # [ (Id(), Type(), Expr()) ]
+        ident = Id(ctx.ID().getText())
+        rhs = self.visit(ctx.expr())
+        if ctx.varsInit():
+            rest = self.visit(ctx.varsInit())
+            typ = rest[0][1]
+            return [ (ident, typ, rhs) ] + rest
+        else:
+            return [( ident, self.visit(ctx.typeDecl()), rhs )]
 
 
     # Visit a parse tree produced by D96Parser#assignStat.
     def visitAssignStat(self, ctx:D96Parser.AssignStatContext):
-        return self.visitChildren(ctx)
+        return [Assign( self.visit(ctx.getChild(0)), self.visit(ctx.expr()) )]
 
 
     # Visit a parse tree produced by D96Parser#ifStat.
     def visitIfStat(self, ctx:D96Parser.IfStatContext):
-        return self.visitChildren(ctx)
+        return [If( self.visit(ctx.expr()), self.visit(ctx.blockStat()), self.visit(ctx.elseifList()) )]
 
 
     # Visit a parse tree produced by D96Parser#elseifList.
     def visitElseifList(self, ctx:D96Parser.ElseifListContext):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 0:
+            return None
+        elif ctx.ELSE():
+            return self.visit(ctx.blockStat())
+        else:
+            return If( self.visit(ctx.expr()), self.visit(ctx.blockStat()), self.visit(ctx.elseifList()) )
 
 
     # Visit a parse tree produced by D96Parser#forStat.
     def visitForStat(self, ctx:D96Parser.ForStatContext):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 9:
+            return [For( self.visit(ctx.scalarVar()), self.visit(ctx.expr(0)), self.visit(ctx.expr(1)), self.visit(ctx.blockStat()) )]
+        else:    
+            return [For( self.visit(ctx.scalarVar()), self.visit(ctx.expr(0)), self.visit(ctx.expr(1)), self.visit(ctx.blockStat()), self.visit(ctx.expr(2)) )]
 
 
     # Visit a parse tree produced by D96Parser#methodCall.
     def visitMethodCall(self, ctx:D96Parser.MethodCallContext):
-        return self.visitChildren(ctx)
+        if ctx.DOT():
+            return [CallStmt( self.visit(ctx.expr8()), Id(ctx.ID().getText()), self.visit(ctx.argList()) )]
+        else:
+            return [CallStmt( Id(ctx.ID().getText()), Id(ctx.STATIC_ID().getText()), self.visit(ctx.argList()) )]
 
 
     # Visit a parse tree produced by D96Parser#scalarVar.
     def visitScalarVar(self, ctx:D96Parser.ScalarVarContext):
-        return self.visitChildren(ctx)
+        if ctx.getChildCount() == 1: return Id(ctx.ID().getText())
+        elif ctx.STATIC_ID(): return FieldAccess( Id(ctx.ID().getText()), Id(ctx.STATIC_ID().getText()) )
+        else: return FieldAccess( self.visit(ctx.expr8()), Id(ctx.ID().getText()) )
 
 
-    # Visit a parse tree produced by D96Parser#indexExpr.
+    """
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
+    """
     def visitIndexExpr(self, ctx:D96Parser.IndexExprContext):
         return self.visitChildren(ctx)
 
@@ -254,22 +377,22 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#arrayLit.
     def visitArrayLit(self, ctx:D96Parser.ArrayLitContext):
-        return self.visitChildren(ctx)
+        return ArrayLiteral(self.visit(ctx.exprList()))
 
 
     # Visit a parse tree produced by D96Parser#exprList.
     def visitExprList(self, ctx:D96Parser.ExprListContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.exprs()) if ctx.getChildCount() else []
 
 
     # Visit a parse tree produced by D96Parser#exprs.
     def visitExprs(self, ctx:D96Parser.ExprsContext):
-        return self.visitChildren(ctx)
+        return [self.visit(ctx.expr())] if ctx.getChildCount() == 1 else [self.visit(ctx.expr)] + self.visit(ctx.exprs())
 
 
     # Visit a parse tree produced by D96Parser#argList.
     def visitArgList(self, ctx:D96Parser.ArgListContext):
-        return self.visitChildren(ctx)
+        return self.visit(ctx.exprs()) if ctx.getChildCount() else []
 
 
     # Visit a parse tree produced by D96Parser#memId.
