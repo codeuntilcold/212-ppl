@@ -1,7 +1,0 @@
-Class IntLit {
-            Var oct: Int = 00;
-            Var hex: Int = 0x1572;
-            Var bin: Int = 0B10101;
-            Var dec: Int = 17_258;
-            Var err_underscore: Int = 17__228;
-        }

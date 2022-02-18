@@ -1,5 +1,0 @@
-Class Ops {
-            Constructor(x: Point; r: Int) {
-                Self.x, Self.r = x, r;
-            }
-        }

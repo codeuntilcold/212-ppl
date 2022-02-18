@@ -1,5 +1,0 @@
-Class ThuongTest {
-            test() {
-                Var x: Int = _123; ## as identifiers ##
-            }
-        }

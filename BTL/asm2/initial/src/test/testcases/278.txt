@@ -1,9 +1,0 @@
-Class Statements {
-            methodInvocation() {
-                {
-                    this.willbelocal();
-                    and = this.will() + run::$flawlessly;
-                    hic.maybe().maybenot();
-                }
-            }
-        }

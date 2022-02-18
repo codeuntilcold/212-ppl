@@ -1,5 +1,0 @@
-Class Point {
-            Val $x, y: Int;
-
-            Constructor(x: Int; y: Int) {}
-        }

@@ -1,5 +1,0 @@
-Class Point {
-            Var x, y: Int;
-
-            Constructor() {}
-        }

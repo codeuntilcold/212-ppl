@@ -1,5 +1,0 @@
-Class Ops {
-            static() {
-                Return aCircle.$radius;
-            }
-        }

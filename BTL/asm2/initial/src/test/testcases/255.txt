@@ -1,7 +1,0 @@
-Class Statements {
-            ifStatement() {
-                If (Null) {
-                    Out.print("Cool");
-                }
-            }
-        }

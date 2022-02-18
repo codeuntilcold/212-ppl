@@ -1,5 +1,0 @@
-Class Expr {
-            main() {
-                Return Self.instance_attr + Expr::$static_attr;
-            }
-        }

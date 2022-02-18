@@ -1,5 +1,0 @@
-Class Ops {
-            $objectCreation() {
-                Return New Object()::$totalObject;
-            }
-        }

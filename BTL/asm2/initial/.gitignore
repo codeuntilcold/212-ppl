@@ -1,0 +1,4 @@
+.vscode/
+.idea/
+src/test/testcases/*
+src/test/solutions/*

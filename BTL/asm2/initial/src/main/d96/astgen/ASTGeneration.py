@@ -68,6 +68,8 @@ class ASTGeneration(D96Visitor):
         # [ (Id(), Type(), Expr()) ]
         ident = self.visit(ctx.memId())
         rhs = self.visit(ctx.expr())
+        # print('attrsInit ----------- memId:\t', ident)
+        # print('attrsInit ----------- expr:\t', rhs)
         if ctx.attrsInit():
             rest = self.visit(ctx.attrsInit())
             typ = rest[0][1]
@@ -132,88 +134,83 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#expr.
     def visitExpr(self, ctx:D96Parser.ExprContext):
-        return self.visit(ctx.expr1(0)) if ctx.getChildCount() == 1 else BinaryOp(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else BinaryOp(
             ctx.getChild(1).getText(),
-            self.visit(ctx.expr1(0)),
-            self.visit(ctx.expr1(1))
+            self.visit(ctx.getChild(0)),
+            self.visit(ctx.getChild(2))
         )
 
 
     # Visit a parse tree produced by D96Parser#expr1.
     def visitExpr1(self, ctx:D96Parser.Expr1Context):
-        return self.visit(ctx.expr2(0)) if ctx.getChildCount() == 1 else BinaryOp(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else BinaryOp(
             ctx.getChild(1).getText(),
-            self.visit(ctx.expr2(0)),
-            self.visit(ctx.expr2(1))
+            self.visit(ctx.getChild(0)),
+            self.visit(ctx.getChild(2))
         )
 
 
     # Visit a parse tree produced by D96Parser#expr2.
     def visitExpr2(self, ctx:D96Parser.Expr2Context):
-        return self.visit(ctx.expr3()) if ctx.getChildCount() == 1 else BinaryOp(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else BinaryOp(
             ctx.getChild(1).getText(),
-            self.visit(ctx.expr2()),
-            self.visit(ctx.expr3())
+            self.visit(ctx.getChild(0)),
+            self.visit(ctx.getChild(2))
         )
 
 
     # Visit a parse tree produced by D96Parser#expr3.
     def visitExpr3(self, ctx:D96Parser.Expr3Context):
-        return self.visit(ctx.expr4()) if ctx.getChildCount() == 1 else BinaryOp(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else BinaryOp(
             ctx.getChild(1).getText(),
-            self.visit(ctx.expr3()),
-            self.visit(ctx.expr4())
+            self.visit(ctx.getChild(0)),
+            self.visit(ctx.getChild(2))
         )
 
 
     # Visit a parse tree produced by D96Parser#expr4.
     def visitExpr4(self, ctx:D96Parser.Expr4Context):
-        return self.visit(ctx.expr5()) if ctx.getChildCount() == 1 else BinaryOp(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else BinaryOp(
             ctx.getChild(1).getText(),
-            self.visit(ctx.expr4()),
-            self.visit(ctx.expr5())
+            self.visit(ctx.getChild(0)),
+            self.visit(ctx.getChild(2))
         )
 
 
     # Visit a parse tree produced by D96Parser#expr5.
     def visitExpr5(self, ctx:D96Parser.Expr5Context):
-        return self.visit(ctx.expr6()) if ctx.getChildCount() == 1 else UnaryOp(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else UnaryOp(
             ctx.getChild(0).getText(),
-            self.visit(ctx.expr5())
+            self.visit(ctx.getChild(1))
         )
 
 
     # Visit a parse tree produced by D96Parser#expr6.
     def visitExpr6(self, ctx:D96Parser.Expr6Context):
-        return self.visit(ctx.expr7()) if ctx.getChildCount() == 1 else UnaryOp(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else UnaryOp(
             ctx.getChild(0).getText(),
-            self.visit(ctx.expr6())
+            self.visit(ctx.getChild(1))
         )
 
-
-
-    """
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-    """
 
     # Visit a parse tree produced by D96Parser#expr7.
     def visitExpr7(self, ctx:D96Parser.Expr7Context):
         if ctx.getChildCount() == 1:
-            self.visit(ctx.expr8())
+            return self.visit(ctx.getChild(0))
         else:
-            return self.visitChildren(ctx)
+            return ArrayCell(self.visit(ctx.getChild(0)), self.visit(ctx.indexes()))
+
+
+    # Visit a parse tree produced by D96Parser#indexes.
+    def visitIndexes(self, ctx:D96Parser.IndexesContext):
+        # List[Expr]
+        return [ self.visit(ctx.expr()) ] if ctx.getChildCount() == 1 else [ self.visit(ctx.expr()) ] + self.visit(ctx.indexes())
 
 
     # Visit a parse tree produced by D96Parser#expr8.
     def visitExpr8(self, ctx:D96Parser.Expr8Context):
         if ctx.getChildCount() == 1:
-            return self.visit(ctx.expr9())
+            return self.visit(ctx.getChild(0))
         elif ctx.getChildCount() == 3:
             return FieldAccess( self.visit(ctx.expr8()), Id(ctx.ID().getText()) )
         else:
@@ -223,7 +220,7 @@ class ASTGeneration(D96Visitor):
     # Visit a parse tree produced by D96Parser#expr9.
     def visitExpr9(self, ctx:D96Parser.Expr9Context):
         if ctx.getChildCount() == 1:
-            return self.visit(ctx.expr10())
+            return self.visit(ctx.getChild(0))
         elif ctx.getChildCount() == 3:
             return FieldAccess( Id(ctx.ID().getText()), Id(ctx.STATIC_ID().getText() ) )
         else:
@@ -232,7 +229,7 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#expr10.
     def visitExpr10(self, ctx:D96Parser.Expr10Context):
-        return self.visit(ctx.operand()) if ctx.getChildCount() == 1 else NewExpr(
+        return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else NewExpr(
             Id(ctx.ID().getText()),
             self.visit(ctx.argList())
         )
@@ -341,17 +338,9 @@ class ASTGeneration(D96Visitor):
         else: return FieldAccess( self.visit(ctx.expr8()), Id(ctx.ID().getText()) )
 
 
-    """
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-        THIS IS WHY WE DONT MESS WITH THE MULTIVERSE
-    """
+    # Visit a parse tree produced by D96Parser#indexExpr.
     def visitIndexExpr(self, ctx:D96Parser.IndexExprContext):
-        return self.visitChildren(ctx)
+        return ArrayCell(self.visit(ctx.getChild(0)), self.visit(ctx.indexes()))
 
 
     # Visit a parse tree produced by D96Parser#typeDecl.

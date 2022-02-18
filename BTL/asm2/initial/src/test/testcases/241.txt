@@ -1,5 +1,0 @@
-Class Ops {
-            arrayAccess() {
-                x.member[0] = not_init;
-            }
-        }

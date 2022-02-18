@@ -1,7 +1,0 @@
-Class Ops {
-            isThisValid(x: Point; r: Int) {
-                Self.newPoint = New Point(x.coords.translate(r));
-
-                Return Self.newPoint;
-            }
-        }

@@ -1,5 +1,0 @@
-Class Statements {
-            forInStatement() {
-                Return x.getX().toCm().plus(5);
-            }
-        }

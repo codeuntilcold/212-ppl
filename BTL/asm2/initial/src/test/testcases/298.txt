@@ -1,1 +1,0 @@
-Class Arrtest { Var x: Array[Int, 0x0]; }

@@ -1,7 +1,0 @@
-Class Expr {
-            main() {
-                Foreach (x In 4 . r . g . b .. 2) {
-                    Out.printInt(arr[x]);
-                }
-            }
-        }

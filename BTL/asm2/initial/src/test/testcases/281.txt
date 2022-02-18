@@ -1,6 +1,0 @@
-Class Expr {
-            main() {
-                a.very.nested.scalar.var = another.very.nested.scalar.var;
-                a::$staticvar = another::$staticmethod();
-            }
-        }

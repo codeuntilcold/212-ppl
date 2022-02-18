@@ -1,5 +1,0 @@
-Class Ops {
-            multiDimArr() {
-                x[0][ x.length - 1 ] = x.singleton();
-            }
-        }

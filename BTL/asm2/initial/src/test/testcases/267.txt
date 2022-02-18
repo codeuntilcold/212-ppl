@@ -1,7 +1,0 @@
-Class Statements {
-            forInStatement() {
-                Foreach (class.var In 1 .. 10 By -1) {
-                    Suite.printInt(index);
-                }
-            }
-        }

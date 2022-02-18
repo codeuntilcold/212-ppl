@@ -1,5 +1,0 @@
-Class Statements {
-            Destructor() {
-                !false = True;
-            }
-        }

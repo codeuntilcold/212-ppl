@@ -1,3 +1,0 @@
-Class Arrtest {
-            Var a: Array[Boolean, 10] = Array(True, True);
-        }

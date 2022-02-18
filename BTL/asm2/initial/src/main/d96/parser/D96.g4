@@ -121,8 +121,12 @@ expr6
 	: SUBOP expr6 | expr7
 	;
 expr7
-	: expr7 (LSB expr RSB)
+	: expr7 indexes
 	| expr8
+	;
+indexes
+	: LSB expr RSB indexes
+	| LSB expr RSB
 	;
 expr8
 	: expr8 DOT ID 
@@ -206,7 +210,7 @@ scalarVar
 	| ID DBCOLON STATIC_ID
 	;
 indexExpr
-	: expr7 (LSB expr RSB)
+	: expr7 indexes
 	;
 
 //
