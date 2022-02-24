@@ -7,7 +7,13 @@ class ASTGeneration(D96Visitor):
     
     # List[ClassDecl]
     def visitProgram(self, ctx:D96Parser.ProgramContext):
-        return Program(self.visit(ctx.classDecls()))
+        classes = self.visit(ctx.classDecls())
+        for c in classes:
+            if c.classname.name == "Program":
+                for mem in c.memlist:
+                    if isinstance(mem, MethodDecl) and mem.name.name == "main" and len(mem.param) == 0:
+                        mem.kind = Static()
+        return Program(classes)
 
 
     # Visit a parse tree produced by D96Parser#classDecls.
@@ -42,20 +48,41 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#attrDecl.
     def visitAttrDecl(self, ctx:D96Parser.AttrDeclContext):
-        attrs = self.visit(ctx.attrs()) if ctx.attrs() else self.visit(ctx.attrsInit())
-        return [ 
-            AttributeDecl(
-                Static() if decl[0].name[0] == '$' else Instance(), 
-                ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
-            ) for decl in attrs
-        ]
+        
+        if ctx.attrs():
+            attrs = self.visit(ctx.attrs())
+            return [ 
+                AttributeDecl(
+                    Static() if decl[0].name[0] == '$' else Instance(), 
+                    ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
+                ) for decl in attrs
+            ]
+        else:
+            attrs = self.visit(ctx.attrsInit())
+            n_init = len(attrs)
+            ret = []
+            # TEMPORARY FIX: BECAUSE RECURSIVE CAUSED 
+            # THE INIT VALUE TO BE REVERSED
+            for i in range(n_init):
+                ret += [
+                    AttributeDecl(
+                        Static() if attrs[i][0].name[0] == '$' else Instance(), 
+                        ConstDecl(attrs[i][0], attrs[i][1], attrs[n_init - i - 1][2]) if ctx.VAL() else VarDecl(attrs[i][0], attrs[i][1], attrs[n_init - i - 1][2])
+                    )
+                ]
+            return ret
 
     # Visit a parse tree produced by D96Parser#attrs.
     def visitAttrs(self, ctx:D96Parser.AttrsContext):
         # [ (Id(), Type(), None) ]
         idents = self.visit(ctx.memIds())
         typ = self.visit(ctx.typeDecl())
-        return [ (idname, typ, None) for idname in idents ]
+
+        # If of class type, then uninitialized var will be Null
+        if isinstance(typ, ClassType):
+            return [ (idname, typ, NullLiteral()) for idname in idents ]
+        else:
+            return [ (idname, typ, None) for idname in idents ]
 
 
     # Visit a parse tree produced by D96Parser#memIds.
@@ -68,8 +95,6 @@ class ASTGeneration(D96Visitor):
         # [ (Id(), Type(), Expr()) ]
         ident = self.visit(ctx.memId())
         rhs = self.visit(ctx.expr())
-        # print('attrsInit ----------- memId:\t', ident)
-        # print('attrsInit ----------- expr:\t', rhs)
         if ctx.attrsInit():
             rest = self.visit(ctx.attrsInit())
             typ = rest[0][1]
@@ -81,27 +106,27 @@ class ASTGeneration(D96Visitor):
     # Visit a parse tree produced by D96Parser#methodDecl.
     def visitMethodDecl(self, ctx:D96Parser.MethodDeclContext):
         if ctx.CONSTRUCTOR(): 
-            return MethodDecl( 
+            return [MethodDecl( 
                 Instance(),
                 Id("Constructor"),
                 self.visit(ctx.paramList()),
                 self.visit(ctx.blockStat())
-            )
+            )]
         elif ctx.DESTRUCTOR():
-            return MethodDecl(
+            return [MethodDecl(
                 Instance(),
                 Id("Destructor"),
                 [],
                 self.visit(ctx.blockStat())
-            )
+            )]
         else:
             funcname = self.visit(ctx.memId())
-            return MethodDecl(
+            return [MethodDecl(
                 Static() if funcname.name[0] == '$' else Instance(),
                 funcname,
                 self.visit(ctx.paramList()),
                 self.visit(ctx.blockStat())
-            )
+            )]
 
     # Visit a parse tree produced by D96Parser#paramList.
     def visitParamList(self, ctx:D96Parser.ParamListContext):
@@ -110,7 +135,7 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#params.
     def visitParams(self, ctx:D96Parser.ParamsContext):
-        return [self.visit(ctx.param())] if ctx.getChildCount() == 1 else [self.visit(ctx.param())] + self.visit(ctx.params())
+        return self.visit(ctx.param()) if ctx.getChildCount() == 1 else self.visit(ctx.param()) + self.visit(ctx.params())
 
 
     # Visit a parse tree produced by D96Parser#param.
@@ -124,7 +149,7 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#blockStat.
     def visitBlockStat(self, ctx:D96Parser.BlockStatContext):
-        return self.visit(ctx.statList())
+        return Block(self.visit(ctx.statList()))
 
 
     # Visit a parse tree produced by D96Parser#statList.
@@ -204,7 +229,7 @@ class ASTGeneration(D96Visitor):
     # Visit a parse tree produced by D96Parser#indexes.
     def visitIndexes(self, ctx:D96Parser.IndexesContext):
         # List[Expr]
-        return [ self.visit(ctx.expr()) ] if ctx.getChildCount() == 1 else [ self.visit(ctx.expr()) ] + self.visit(ctx.indexes())
+        return [ self.visit(ctx.expr()) ] if ctx.getChildCount() == 3 else [ self.visit(ctx.expr()) ] + self.visit(ctx.indexes())
 
 
     # Visit a parse tree produced by D96Parser#expr8.
@@ -240,9 +265,22 @@ class ASTGeneration(D96Visitor):
         elif ctx.ID(): return Id(ctx.ID().getText())
         elif ctx.SELF(): return SelfLiteral()
         elif ctx.NULL(): return NullLiteral()
-        elif ctx.INTLIT(): return IntLiteral(int(ctx.INTLIT().getText()))
+        elif ctx.INTLIT():
+            content = ctx.INTLIT().getText()
+            if '0x' in content or '0X' in content:
+                return IntLiteral(int(ctx.INTLIT().getText(), base=16))
+            elif '0b' in content or '0B' in content:
+                return IntLiteral(int(ctx.INTLIT().getText(), base=2))
+            elif content[0] == '0' and content != "0":
+                content = '0o' + content[1:]
+                return IntLiteral(int(ctx.INTLIT().getText(), base=8))
+            else:
+                return IntLiteral(int(ctx.INTLIT().getText(), base=10))
+                
         elif ctx.FLOATLIT(): return FloatLiteral(float(ctx.FLOATLIT().getText()))
-        elif ctx.BOOLLIT(): return BooleanLiteral(bool(ctx.BOOLLIT().getText()))
+        elif ctx.BOOLLIT(): return BooleanLiteral(ctx.BOOLLIT().getText() == "True")
+
+        # TODO: Does string behave normally with escape '"
         elif ctx.STRINGLIT(): return StringLiteral(ctx.STRINGLIT().getText())
         else: return self.visit(ctx.arrayLit())
 
@@ -253,20 +291,34 @@ class ASTGeneration(D96Visitor):
             return [Return()] if ctx.getChildCount() == 2 else [Return(self.visit(ctx.expr()))]
         elif ctx.BREAK(): return [Break()]
         elif ctx.CONTINUE(): return [Continue()]
-        else: return self.visit(ctx.getChild(0))
+        else:
+            return self.visit(ctx.getChild(0))
 
     # Visit a parse tree produced by D96Parser#declStat.
     def visitDeclStat(self, ctx:D96Parser.DeclStatContext):
+        # print(self.visit(ctx.varDecl()))
         return self.visit(ctx.varDecl())
 
 
     # Visit a parse tree produced by D96Parser#varDecl.
     def visitVarDecl(self, ctx:D96Parser.VarDeclContext):
-        variables = self.visit(ctx.variables()) if ctx.variables() else self.visit(ctx.varsInit())
-        return [ 
-            ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
-            for decl in variables
-        ]
+        if ctx.variables():
+            variables = self.visit(ctx.variables())
+            return [ 
+                ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
+                for decl in variables
+            ]
+        else:
+            variables = self.visit(ctx.varsInit())
+            n_init = len(variables)
+            ret = []
+            for i in range(n_init):
+                ret += [
+                    ConstDecl(variables[i][0], variables[i][1], variables[n_init - i - 1][2]) if ctx.VAL() else VarDecl(variables[i][0], variables[i][1], variables[n_init - i - 1][2])
+                ]
+            # print("==============")
+            # for i in ret: print(i)
+            return ret
 
 
     # Visit a parse tree produced by D96Parser#variables.
@@ -274,7 +326,10 @@ class ASTGeneration(D96Visitor):
         # [ (Id(), Type(), None) ]
         idents = self.visit(ctx.ids())
         typ = self.visit(ctx.typeDecl())
-        return [ (idname, typ, None) for idname in idents ]
+        if isinstance(typ, ClassType):
+            return [ (idname, typ, NullLiteral()) for idname in idents ]
+        else:
+            return [ (idname, typ, None) for idname in idents ]
 
 
     # Visit a parse tree produced by D96Parser#ids.
@@ -287,7 +342,10 @@ class ASTGeneration(D96Visitor):
         # [ (Id(), Type(), Expr()) ]
         ident = Id(ctx.ID().getText())
         rhs = self.visit(ctx.expr())
-        if ctx.varsInit():
+
+        # TODO: Thứ tự của các khởi tạo bị ngược rùi nè
+
+        if ctx.COMMA():
             rest = self.visit(ctx.varsInit())
             typ = rest[0][1]
             return [ (ident, typ, rhs) ] + rest
@@ -318,7 +376,7 @@ class ASTGeneration(D96Visitor):
     # Visit a parse tree produced by D96Parser#forStat.
     def visitForStat(self, ctx:D96Parser.ForStatContext):
         if ctx.getChildCount() == 9:
-            return [For( self.visit(ctx.scalarVar()), self.visit(ctx.expr(0)), self.visit(ctx.expr(1)), self.visit(ctx.blockStat()) )]
+            return [For( self.visit(ctx.scalarVar()), self.visit(ctx.expr(0)), self.visit(ctx.expr(1)), self.visit(ctx.blockStat()), IntLiteral(1) )]
         else:    
             return [For( self.visit(ctx.scalarVar()), self.visit(ctx.expr(0)), self.visit(ctx.expr(1)), self.visit(ctx.blockStat()), self.visit(ctx.expr(2)) )]
 
@@ -350,8 +408,19 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#arrayType.
     def visitArrayType(self, ctx:D96Parser.ArrayTypeContext):
+        size = ctx.INTLIT().getText()
+        if '0x' in size or '0X' in size:
+            size = int(ctx.INTLIT().getText(), base=16)
+        elif '0b' in size or '0B' in size:
+            size = int(ctx.INTLIT().getText(), base=2)
+        elif size[0] == '0' and size != "0":
+            size = '0o' + size[1:]
+            size = int(ctx.INTLIT().getText(), base=8)
+        else:
+            size = int(ctx.INTLIT().getText(), base=10)
+        
         return ArrayType(
-            int(ctx.INTLIT().getText()),
+            size,
             self.visit(ctx.getChild(2))
         )
 
@@ -371,17 +440,17 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#exprList.
     def visitExprList(self, ctx:D96Parser.ExprListContext):
-        return self.visit(ctx.exprs()) if ctx.getChildCount() else []
+        return self.visit(ctx.exprs()) if ctx.getChildCount() == 1 else []
 
 
     # Visit a parse tree produced by D96Parser#exprs.
     def visitExprs(self, ctx:D96Parser.ExprsContext):
-        return [self.visit(ctx.expr())] if ctx.getChildCount() == 1 else [self.visit(ctx.expr)] + self.visit(ctx.exprs())
+        return [self.visit(ctx.expr())] if ctx.getChildCount() == 1 else [self.visit(ctx.expr())] + self.visit(ctx.exprs())
 
 
     # Visit a parse tree produced by D96Parser#argList.
     def visitArgList(self, ctx:D96Parser.ArgListContext):
-        return self.visit(ctx.exprs()) if ctx.getChildCount() else []
+        return self.visit(ctx.exprs()) if ctx.getChildCount() == 1 else []
 
 
     # Visit a parse tree produced by D96Parser#memId.

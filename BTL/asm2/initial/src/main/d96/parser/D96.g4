@@ -143,10 +143,14 @@ expr10
 	;
 operand
 	: LP expr RP 
-	| ID						// variables (NOT ATTRIBUTES)
 	| SELF
-	| NULL 		| INTLIT 	| FLOATLIT 
-	| BOOLLIT 	| STRINGLIT | arrayLit	//constants
+	| NULL 		
+	| BOOLLIT 	
+	| INTLIT 	
+	| FLOATLIT 
+	| STRINGLIT 
+	| arrayLit	//constants
+	| ID		// variables (NOT ATTRIBUTES)
 	;
 
 //
@@ -330,6 +334,11 @@ SEMI: 			';';
 //		IDENTIFIERS
 //
 
+//		True is mistaken as an ID
+BOOLLIT
+	: TRUE | FALSE
+	;
+
 ID
 	: [a-zA-Z_] [a-zA-Z0-9_]*
 	;
@@ -378,10 +387,6 @@ FLOATLIT
 	| INTPART DECPART? EXPPART
 	| INTPART DECPART EXPPART?
 	) {self.text = self.text.replace('_','')};
-
-BOOLLIT
-	: TRUE | FALSE
-	;
 
 STRINGLIT
 	: (["] (STR_ESC | STR_CHAR)*? ["]) {self.text = self.text[1:-1]}
