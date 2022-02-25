@@ -214,7 +214,7 @@ scalarVar
 	| ID DBCOLON STATIC_ID
 	;
 indexExpr
-	: expr7 indexes
+	: expr7
 	;
 
 //

@@ -824,15 +824,20 @@ class ASTGenSuite(unittest.TestCase):
             check() {
                 a[1] = New Variable();
                 a[1]["index"] = something;
+                a[1]["index"]["of"]["lhs"] = something;
                 some.methodCall()[0] = something;
                 Array(0, 1, 2)[1] = something;
             }
         }"""
         # TODO: This is not the way to represent multidimensional array ?????
+        #Program([ClassDecl(Id(Stmt),[MethodDecl(Id(check),Instance,[],Block([AssignStmt(ArrayCell(Id(a),[IntLit(1)]),NewExpr(Id(Variable),[])),AssignStmt(ArrayCell(ArrayCell(Id(a),[IntLit(1)]),[StringLit(index)]),Id(something)),AssignStmt(ArrayCell(ArrayCell(Id(a),[IntLit(1),StringLit(index),StringLit(of)]),[StringLit(lhs)]),Id(something)),AssignStmt(ArrayCell(CallExpr(Id(some),Id(methodCall),[]),[IntLit(0)]),Id(something)),AssignStmt(ArrayCell([IntLit(0),IntLit(1),IntLit(2)],[IntLit(1)]),Id(something))]))])])
         expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
             Assign(ArrayCell(Id("a"),[IntLiteral(1)]),NewExpr(Id("Variable"),[])),
             Assign(
-                ArrayCell(ArrayCell(Id("a"),[IntLiteral(1)]),[StringLiteral("index")]),
+                ArrayCell(Id("a"),[IntLiteral(1),StringLiteral("index")]),
+                Id("something")),
+            Assign(
+                ArrayCell(Id("a"),[IntLiteral(1),StringLiteral("index"),StringLiteral("of"),StringLiteral("lhs")]),
                 Id("something")),
             Assign(
                 ArrayCell(CallExpr(Id("some"),Id("methodCall"),[]),[IntLiteral(0)]),
@@ -1075,7 +1080,7 @@ class ASTGenSuite(unittest.TestCase):
     # def test_350(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,350))
 

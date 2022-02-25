@@ -396,8 +396,8 @@ class ASTGeneration(D96Visitor):
 
     # Visit a parse tree produced by D96Parser#indexExpr.
     def visitIndexExpr(self, ctx:D96Parser.IndexExprContext):
-        return ArrayCell(self.visit(ctx.getChild(0)), self.visit(ctx.indexes()))
-
+        # return ArrayCell(self.visit(ctx.getChild(0)), self.visit(ctx.indexes()))
+        return self.visit(ctx.getChild(0))
 
     # Visit a parse tree produced by D96Parser#typeDecl.
     def visitTypeDecl(self, ctx:D96Parser.TypeDeclContext):

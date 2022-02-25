@@ -12,7 +12,7 @@ else:
 def serializedATN():
     with StringIO() as buf:
         buf.write("\3\u608b\ua72a\u8133\ub9ed\u417c\u3be7\u7786\u5964\3@")
-        buf.write("\u020e\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
+        buf.write("\u020d\4\2\t\2\4\3\t\3\4\4\t\4\4\5\t\5\4\6\t\6\4\7\t\7")
         buf.write("\4\b\t\b\4\t\t\t\4\n\t\n\4\13\t\13\4\f\t\f\4\r\t\r\4\16")
         buf.write("\t\16\4\17\t\17\4\20\t\20\4\21\t\21\4\22\t\22\4\23\t\23")
         buf.write("\4\24\t\24\4\25\t\25\4\26\t\26\4\27\t\27\4\30\t\30\4\31")
@@ -53,28 +53,28 @@ def serializedATN():
         buf.write("\'\3\'\3\'\3\'\3\'\3\'\3\'\3\'\3\'\3\'\3\'\3\'\3\'\3\'")
         buf.write("\3\'\3\'\3\'\3\'\3\'\3\'\5\'\u01be\n\'\3(\3(\3(\3(\3(")
         buf.write("\3(\3(\3(\3(\3(\3(\3(\3(\3(\3(\3(\5(\u01d0\n(\3)\3)\3")
-        buf.write(")\3)\3)\3)\3)\3)\5)\u01da\n)\3*\3*\3*\3+\3+\3+\5+\u01e2")
-        buf.write("\n+\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\5")
-        buf.write(",\u01f4\n,\3-\3-\3.\3.\3.\3.\3.\3/\3/\5/\u01ff\n/\3\60")
-        buf.write("\3\60\3\60\3\60\3\60\5\60\u0206\n\60\3\61\3\61\5\61\u020a")
-        buf.write("\n\61\3\62\3\62\3\62\2\7$&(.\62\63\2\4\6\b\n\f\16\20\22")
-        buf.write("\24\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@BDFHJLNPR")
-        buf.write("TVXZ\\^`b\2\n\3\2\4\5\3\2\37 \3\2$)\3\2!\"\3\2\32\33\3")
-        buf.write("\2\34\36\3\2\24\27\3\2\678\2\u0217\2d\3\2\2\2\4k\3\2\2")
-        buf.write("\2\6{\3\2\2\2\b\u0081\3\2\2\2\n\u0085\3\2\2\2\f\u0087")
-        buf.write("\3\2\2\2\16\u008e\3\2\2\2\20\u0097\3\2\2\2\22\u00a5\3")
-        buf.write("\2\2\2\24\u00b7\3\2\2\2\26\u00bb\3\2\2\2\30\u00c2\3\2")
-        buf.write("\2\2\32\u00c4\3\2\2\2\34\u00c8\3\2\2\2\36\u00d0\3\2\2")
-        buf.write("\2 \u00d7\3\2\2\2\"\u00de\3\2\2\2$\u00e0\3\2\2\2&\u00eb")
+        buf.write(")\3)\3)\3)\3)\3)\5)\u01da\n)\3*\3*\3+\3+\3+\5+\u01e1\n")
+        buf.write("+\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\3,\5,\u01f3")
+        buf.write("\n,\3-\3-\3.\3.\3.\3.\3.\3/\3/\5/\u01fe\n/\3\60\3\60\3")
+        buf.write("\60\3\60\3\60\5\60\u0205\n\60\3\61\3\61\5\61\u0209\n\61")
+        buf.write("\3\62\3\62\3\62\2\7$&(.\62\63\2\4\6\b\n\f\16\20\22\24")
+        buf.write("\26\30\32\34\36 \"$&(*,.\60\62\64\668:<>@BDFHJLNPRTVX")
+        buf.write("Z\\^`b\2\n\3\2\4\5\3\2\37 \3\2$)\3\2!\"\3\2\32\33\3\2")
+        buf.write("\34\36\3\2\24\27\3\2\678\2\u0216\2d\3\2\2\2\4k\3\2\2\2")
+        buf.write("\6{\3\2\2\2\b\u0081\3\2\2\2\n\u0085\3\2\2\2\f\u0087\3")
+        buf.write("\2\2\2\16\u008e\3\2\2\2\20\u0097\3\2\2\2\22\u00a5\3\2")
+        buf.write("\2\2\24\u00b7\3\2\2\2\26\u00bb\3\2\2\2\30\u00c2\3\2\2")
+        buf.write("\2\32\u00c4\3\2\2\2\34\u00c8\3\2\2\2\36\u00d0\3\2\2\2")
+        buf.write(" \u00d7\3\2\2\2\"\u00de\3\2\2\2$\u00e0\3\2\2\2&\u00eb")
         buf.write("\3\2\2\2(\u00f6\3\2\2\2*\u0104\3\2\2\2,\u0109\3\2\2\2")
         buf.write(".\u010b\3\2\2\2\60\u011e\3\2\2\2\62\u0120\3\2\2\2\64\u013d")
         buf.write("\3\2\2\2\66\u0146\3\2\2\28\u0154\3\2\2\2:\u0166\3\2\2")
         buf.write("\2<\u0168\3\2\2\2>\u016b\3\2\2\2@\u0170\3\2\2\2B\u0178")
         buf.write("\3\2\2\2D\u0186\3\2\2\2F\u0192\3\2\2\2H\u0194\3\2\2\2")
         buf.write("J\u01a5\3\2\2\2L\u01bd\3\2\2\2N\u01cf\3\2\2\2P\u01d9\3")
-        buf.write("\2\2\2R\u01db\3\2\2\2T\u01e1\3\2\2\2V\u01f3\3\2\2\2X\u01f5")
-        buf.write("\3\2\2\2Z\u01f7\3\2\2\2\\\u01fe\3\2\2\2^\u0205\3\2\2\2")
-        buf.write("`\u0209\3\2\2\2b\u020b\3\2\2\2de\5\4\3\2ef\7\2\2\3f\3")
+        buf.write("\2\2\2R\u01db\3\2\2\2T\u01e0\3\2\2\2V\u01f2\3\2\2\2X\u01f4")
+        buf.write("\3\2\2\2Z\u01f6\3\2\2\2\\\u01fd\3\2\2\2^\u0204\3\2\2\2")
+        buf.write("`\u0208\3\2\2\2b\u020a\3\2\2\2de\5\4\3\2ef\7\2\2\3f\3")
         buf.write("\3\2\2\2gh\5\6\4\2hi\5\4\3\2il\3\2\2\2jl\5\6\4\2kg\3\2")
         buf.write("\2\2kj\3\2\2\2l\5\3\2\2\2mn\7\3\2\2no\7\67\2\2op\7/\2")
         buf.write("\2pq\5\b\5\2qr\7\60\2\2r|\3\2\2\2st\7\3\2\2tu\7\67\2\2")
@@ -224,30 +224,30 @@ def serializedATN():
         buf.write("\2\u01d5\u01da\3\2\2\2\u01d6\u01d7\7\67\2\2\u01d7\u01d8")
         buf.write("\7+\2\2\u01d8\u01da\78\2\2\u01d9\u01d1\3\2\2\2\u01d9\u01d2")
         buf.write("\3\2\2\2\u01d9\u01d6\3\2\2\2\u01daQ\3\2\2\2\u01db\u01dc")
-        buf.write("\5.\30\2\u01dc\u01dd\5\60\31\2\u01ddS\3\2\2\2\u01de\u01e2")
-        buf.write("\5X-\2\u01df\u01e2\5V,\2\u01e0\u01e2\7\67\2\2\u01e1\u01de")
-        buf.write("\3\2\2\2\u01e1\u01df\3\2\2\2\u01e1\u01e0\3\2\2\2\u01e2")
-        buf.write("U\3\2\2\2\u01e3\u01e4\7\30\2\2\u01e4\u01e5\7\61\2\2\u01e5")
-        buf.write("\u01e6\5V,\2\u01e6\u01e7\7\63\2\2\u01e7\u01e8\6,\b\2\u01e8")
-        buf.write("\u01e9\79\2\2\u01e9\u01ea\7\62\2\2\u01ea\u01f4\3\2\2\2")
-        buf.write("\u01eb\u01ec\7\30\2\2\u01ec\u01ed\7\61\2\2\u01ed\u01ee")
-        buf.write("\5X-\2\u01ee\u01ef\7\63\2\2\u01ef\u01f0\6,\t\2\u01f0\u01f1")
-        buf.write("\79\2\2\u01f1\u01f2\7\62\2\2\u01f2\u01f4\3\2\2\2\u01f3")
-        buf.write("\u01e3\3\2\2\2\u01f3\u01eb\3\2\2\2\u01f4W\3\2\2\2\u01f5")
-        buf.write("\u01f6\t\b\2\2\u01f6Y\3\2\2\2\u01f7\u01f8\7\30\2\2\u01f8")
-        buf.write("\u01f9\7-\2\2\u01f9\u01fa\5\\/\2\u01fa\u01fb\7.\2\2\u01fb")
-        buf.write("[\3\2\2\2\u01fc\u01ff\5^\60\2\u01fd\u01ff\3\2\2\2\u01fe")
-        buf.write("\u01fc\3\2\2\2\u01fe\u01fd\3\2\2\2\u01ff]\3\2\2\2\u0200")
-        buf.write("\u0201\5 \21\2\u0201\u0202\7\63\2\2\u0202\u0203\5^\60")
-        buf.write("\2\u0203\u0206\3\2\2\2\u0204\u0206\5 \21\2\u0205\u0200")
-        buf.write("\3\2\2\2\u0205\u0204\3\2\2\2\u0206_\3\2\2\2\u0207\u020a")
-        buf.write("\5^\60\2\u0208\u020a\3\2\2\2\u0209\u0207\3\2\2\2\u0209")
-        buf.write("\u0208\3\2\2\2\u020aa\3\2\2\2\u020b\u020c\t\t\2\2\u020c")
-        buf.write("c\3\2\2\2)k{\u0081\u0085\u008a\u0097\u00a5\u00b7\u00bb")
-        buf.write("\u00c2\u00d0\u00d7\u00de\u00e8\u00f3\u00fe\u0104\u0109")
-        buf.write("\u0112\u011e\u012d\u012f\u013d\u0146\u0154\u0166\u016e")
-        buf.write("\u0178\u0186\u0192\u01a5\u01bd\u01cf\u01d9\u01e1\u01f3")
-        buf.write("\u01fe\u0205\u0209")
+        buf.write("\5.\30\2\u01dcS\3\2\2\2\u01dd\u01e1\5X-\2\u01de\u01e1")
+        buf.write("\5V,\2\u01df\u01e1\7\67\2\2\u01e0\u01dd\3\2\2\2\u01e0")
+        buf.write("\u01de\3\2\2\2\u01e0\u01df\3\2\2\2\u01e1U\3\2\2\2\u01e2")
+        buf.write("\u01e3\7\30\2\2\u01e3\u01e4\7\61\2\2\u01e4\u01e5\5V,\2")
+        buf.write("\u01e5\u01e6\7\63\2\2\u01e6\u01e7\6,\b\2\u01e7\u01e8\7")
+        buf.write("9\2\2\u01e8\u01e9\7\62\2\2\u01e9\u01f3\3\2\2\2\u01ea\u01eb")
+        buf.write("\7\30\2\2\u01eb\u01ec\7\61\2\2\u01ec\u01ed\5X-\2\u01ed")
+        buf.write("\u01ee\7\63\2\2\u01ee\u01ef\6,\t\2\u01ef\u01f0\79\2\2")
+        buf.write("\u01f0\u01f1\7\62\2\2\u01f1\u01f3\3\2\2\2\u01f2\u01e2")
+        buf.write("\3\2\2\2\u01f2\u01ea\3\2\2\2\u01f3W\3\2\2\2\u01f4\u01f5")
+        buf.write("\t\b\2\2\u01f5Y\3\2\2\2\u01f6\u01f7\7\30\2\2\u01f7\u01f8")
+        buf.write("\7-\2\2\u01f8\u01f9\5\\/\2\u01f9\u01fa\7.\2\2\u01fa[\3")
+        buf.write("\2\2\2\u01fb\u01fe\5^\60\2\u01fc\u01fe\3\2\2\2\u01fd\u01fb")
+        buf.write("\3\2\2\2\u01fd\u01fc\3\2\2\2\u01fe]\3\2\2\2\u01ff\u0200")
+        buf.write("\5 \21\2\u0200\u0201\7\63\2\2\u0201\u0202\5^\60\2\u0202")
+        buf.write("\u0205\3\2\2\2\u0203\u0205\5 \21\2\u0204\u01ff\3\2\2\2")
+        buf.write("\u0204\u0203\3\2\2\2\u0205_\3\2\2\2\u0206\u0209\5^\60")
+        buf.write("\2\u0207\u0209\3\2\2\2\u0208\u0206\3\2\2\2\u0208\u0207")
+        buf.write("\3\2\2\2\u0209a\3\2\2\2\u020a\u020b\t\t\2\2\u020bc\3\2")
+        buf.write("\2\2)k{\u0081\u0085\u008a\u0097\u00a5\u00b7\u00bb\u00c2")
+        buf.write("\u00d0\u00d7\u00de\u00e8\u00f3\u00fe\u0104\u0109\u0112")
+        buf.write("\u011e\u012d\u012f\u013d\u0146\u0154\u0166\u016e\u0178")
+        buf.write("\u0186\u0192\u01a5\u01bd\u01cf\u01d9\u01e0\u01f2\u01fd")
+        buf.write("\u0204\u0208")
         return buf.getvalue()
 
 
@@ -3474,10 +3474,6 @@ class D96Parser ( Parser ):
             return self.getTypedRuleContext(D96Parser.Expr7Context,0)
 
 
-        def indexes(self):
-            return self.getTypedRuleContext(D96Parser.IndexesContext,0)
-
-
         def getRuleIndex(self):
             return D96Parser.RULE_indexExpr
 
@@ -3498,8 +3494,6 @@ class D96Parser ( Parser ):
             self.enterOuterAlt(localctx, 1)
             self.state = 473
             self.expr7(0)
-            self.state = 474
-            self.indexes()
         except RecognitionException as re:
             localctx.exception = re
             self._errHandler.reportError(self, re)
@@ -3544,22 +3538,22 @@ class D96Parser ( Parser ):
         localctx = D96Parser.TypeDeclContext(self, self._ctx, self.state)
         self.enterRule(localctx, 82, self.RULE_typeDecl)
         try:
-            self.state = 479
+            self.state = 478
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [D96Parser.STRINGTYPE, D96Parser.BOOLTYPE, D96Parser.INTTYPE, D96Parser.FLOATTYPE]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 476
+                self.state = 475
                 self.primitiveType()
                 pass
             elif token in [D96Parser.ARRAY]:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 477
+                self.state = 476
                 self.arrayType()
                 pass
             elif token in [D96Parser.ID]:
                 self.enterOuterAlt(localctx, 3)
-                self.state = 478
+                self.state = 477
                 self.match(D96Parser.ID)
                 pass
             else:
@@ -3621,46 +3615,46 @@ class D96Parser ( Parser ):
         localctx = D96Parser.ArrayTypeContext(self, self._ctx, self.state)
         self.enterRule(localctx, 84, self.RULE_arrayType)
         try:
-            self.state = 497
+            self.state = 496
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,35,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 481
+                self.state = 480
                 self.match(D96Parser.ARRAY)
-                self.state = 482
+                self.state = 481
                 self.match(D96Parser.LSB)
-                self.state = 483
+                self.state = 482
                 self.arrayType()
-                self.state = 484
+                self.state = 483
                 self.match(D96Parser.COMMA)
-                self.state = 485
+                self.state = 484
                 if not self.getCurrentToken().text not in self.ZEROLIT_ARR:
                     from antlr4.error.Errors import FailedPredicateException
                     raise FailedPredicateException(self, "self.getCurrentToken().text not in self.ZEROLIT_ARR")
-                self.state = 486
+                self.state = 485
                 self.match(D96Parser.INTLIT)
-                self.state = 487
+                self.state = 486
                 self.match(D96Parser.RSB)
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 489
+                self.state = 488
                 self.match(D96Parser.ARRAY)
-                self.state = 490
+                self.state = 489
                 self.match(D96Parser.LSB)
-                self.state = 491
+                self.state = 490
                 self.primitiveType()
-                self.state = 492
+                self.state = 491
                 self.match(D96Parser.COMMA)
-                self.state = 493
+                self.state = 492
                 if not self.getCurrentToken().text not in self.ZEROLIT_ARR:
                     from antlr4.error.Errors import FailedPredicateException
                     raise FailedPredicateException(self, "self.getCurrentToken().text not in self.ZEROLIT_ARR")
-                self.state = 494
+                self.state = 493
                 self.match(D96Parser.INTLIT)
-                self.state = 495
+                self.state = 494
                 self.match(D96Parser.RSB)
                 pass
 
@@ -3712,7 +3706,7 @@ class D96Parser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 499
+            self.state = 498
             _la = self._input.LA(1)
             if not((((_la) & ~0x3f) == 0 and ((1 << _la) & ((1 << D96Parser.STRINGTYPE) | (1 << D96Parser.BOOLTYPE) | (1 << D96Parser.INTTYPE) | (1 << D96Parser.FLOATTYPE))) != 0)):
                 self._errHandler.recoverInline(self)
@@ -3766,13 +3760,13 @@ class D96Parser ( Parser ):
         self.enterRule(localctx, 88, self.RULE_arrayLit)
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 501
+            self.state = 500
             self.match(D96Parser.ARRAY)
-            self.state = 502
+            self.state = 501
             self.match(D96Parser.LP)
-            self.state = 503
+            self.state = 502
             self.exprList()
-            self.state = 504
+            self.state = 503
             self.match(D96Parser.RP)
         except RecognitionException as re:
             localctx.exception = re
@@ -3811,12 +3805,12 @@ class D96Parser ( Parser ):
         localctx = D96Parser.ExprListContext(self, self._ctx, self.state)
         self.enterRule(localctx, 90, self.RULE_exprList)
         try:
-            self.state = 508
+            self.state = 507
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [D96Parser.SELF, D96Parser.NEW, D96Parser.ARRAY, D96Parser.NULL, D96Parser.SUBOP, D96Parser.NOT, D96Parser.LP, D96Parser.BOOLLIT, D96Parser.ID, D96Parser.INTLIT, D96Parser.FLOATLIT, D96Parser.STRINGLIT]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 506
+                self.state = 505
                 self.exprs()
                 pass
             elif token in [D96Parser.RP]:
@@ -3870,22 +3864,22 @@ class D96Parser ( Parser ):
         localctx = D96Parser.ExprsContext(self, self._ctx, self.state)
         self.enterRule(localctx, 92, self.RULE_exprs)
         try:
-            self.state = 515
+            self.state = 514
             self._errHandler.sync(self)
             la_ = self._interp.adaptivePredict(self._input,37,self._ctx)
             if la_ == 1:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 510
+                self.state = 509
                 self.expr()
-                self.state = 511
+                self.state = 510
                 self.match(D96Parser.COMMA)
-                self.state = 512
+                self.state = 511
                 self.exprs()
                 pass
 
             elif la_ == 2:
                 self.enterOuterAlt(localctx, 2)
-                self.state = 514
+                self.state = 513
                 self.expr()
                 pass
 
@@ -3927,12 +3921,12 @@ class D96Parser ( Parser ):
         localctx = D96Parser.ArgListContext(self, self._ctx, self.state)
         self.enterRule(localctx, 94, self.RULE_argList)
         try:
-            self.state = 519
+            self.state = 518
             self._errHandler.sync(self)
             token = self._input.LA(1)
             if token in [D96Parser.SELF, D96Parser.NEW, D96Parser.ARRAY, D96Parser.NULL, D96Parser.SUBOP, D96Parser.NOT, D96Parser.LP, D96Parser.BOOLLIT, D96Parser.ID, D96Parser.INTLIT, D96Parser.FLOATLIT, D96Parser.STRINGLIT]:
                 self.enterOuterAlt(localctx, 1)
-                self.state = 517
+                self.state = 516
                 self.exprs()
                 pass
             elif token in [D96Parser.RP]:
@@ -3983,7 +3977,7 @@ class D96Parser ( Parser ):
         self._la = 0 # Token type
         try:
             self.enterOuterAlt(localctx, 1)
-            self.state = 521
+            self.state = 520
             _la = self._input.LA(1)
             if not(_la==D96Parser.ID or _la==D96Parser.STATIC_ID):
                 self._errHandler.recoverInline(self)
