@@ -525,173 +525,552 @@ class ASTGenSuite(unittest.TestCase):
         ]))
         self.assertTrue(TestAST.test(input,expect,325))
 
-    # def test_326(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,326))
+    def test_326(self):
+        input = """Class Expr {
+            Var a: Int = (1 + 2).a;
+            Var a: Int = "String".length;
+            Var a: Int = Shape::$num.value;
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Expr"), [
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), FieldAccess(BinaryOp("+", IntLiteral(1), IntLiteral(2)), Id("a")))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), FieldAccess(StringLiteral("String"), Id("length")))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), FieldAccess(FieldAccess(Id("Shape"), Id("$num")), Id("value")))),
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,326))
 
-    # def test_327(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,327))
+    def test_327(self):
+        input = """Class Expr {
+            Var a: Int = a.a();
+            Var a: Int = a.a()[1];
+            Var a: Int = a.a()[1][2];
+            Var a: Int = Shape::$num();
+            Var a: Int = Shape::$num()[1];
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Expr"), [
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), CallExpr(Id("a"), Id("a"), []))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), ArrayCell(CallExpr(Id("a"), Id("a"), []), [IntLiteral(1)]))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), ArrayCell(CallExpr(Id("a"), Id("a"), []), [IntLiteral(1), IntLiteral(2)]))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), CallExpr(Id("Shape"), Id("$num"), []))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), ArrayCell(CallExpr(Id("Shape"), Id("$num"), []), [IntLiteral(1)]))),
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,327))
 
-    # def test_328(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,328))
+    def test_328(self):
+        input = """Class Expr {
+            Var a: Int = a.a(1, 2, 3);
+            Var a: Int = a.a(a.length, a::$size);
+            Var a: Int = a.a(a[1], a[2]);
+            Var a: Int = Shape::$num(1, 2, 3);
+            Var a: Int = Shape::$num(a[1]);
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Expr"), [
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), CallExpr(Id("a"), Id("a"), [IntLiteral(1), IntLiteral(2), IntLiteral(3)]))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), CallExpr(Id("a"), Id("a"), [FieldAccess(Id("a"), Id("length")), FieldAccess(Id("a"), Id("$size"))]))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), CallExpr(Id("a"), Id("a"), [ArrayCell(Id("a"), [IntLiteral(1)]), ArrayCell(Id("a"), [IntLiteral(2)])]))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), CallExpr(Id("Shape"), Id("$num"), [IntLiteral(1), IntLiteral(2), IntLiteral(3)]))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), CallExpr(Id("Shape"), Id("$num"), [ArrayCell(Id("a"), [IntLiteral(1)])]))),
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,328))
 
-    # def test_329(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,329))
+    def test_329(self):
+        input = """Class Expr {
+            Var a: Int = New Ele();
+            Var a: Int = New Ele(1, 2);
+            check() {
+                Var a: Int = New Ele();
+                Var a: Int = New Ele(1, 2);
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Expr"), [
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), NewExpr(Id("Ele"), []))),
+                AttributeDecl(Instance(),VarDecl(Id("a"), IntType(), NewExpr(Id("Ele"), [IntLiteral(1), IntLiteral(2)]))),
+                MethodDecl(Instance(), Id("check"), [], Block([
+                    VarDecl(Id("a"), IntType(), NewExpr(Id("Ele"), [])),
+                    VarDecl(Id("a"), IntType(), NewExpr(Id("Ele"), [IntLiteral(1), IntLiteral(2)])),
+                ])),
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,329))
 
-    # def test_330(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,330))
+    def test_330(self):
+        input = """Class Expr {
+            check() {
+                Return Self;
+                Return Self.hate;
+                Return Self + Self;
+                Return Self[hatred];
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Expr"), [
+                MethodDecl(Instance(), Id("check"), [], Block([
+                    Return(SelfLiteral()),
+                    Return(FieldAccess(SelfLiteral(), Id("hate"))),
+                    Return(BinaryOp("+", SelfLiteral(), SelfLiteral())),
+                    Return(ArrayCell(SelfLiteral(), [Id("hatred")])),
+                ])),
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,330))
 
-    # def test_331(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,331))
+    def test_331(self):
+        input = """Class Expr {
+            Var a: Array[Int, 3] = (a + a) * a::$a; 
+            Var $a: String = - a - a % a.a;
+            check() {
+                Var a: Array[Int, 3] = (a == a) * a::$a; 
+                Var a: String = - a - a % a[a];
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Expr"),[
+                AttributeDecl(Instance(),VarDecl(Id("a"),ArrayType(3,IntType()),
+                    BinaryOp("*",
+                        BinaryOp("+",Id("a"),Id("a")),
+                        FieldAccess(Id("a"),Id("$a"))
+                ))),
+                AttributeDecl(Static(),VarDecl(Id("$a"),StringType(),
+                    BinaryOp("-",
+                        UnaryOp("-",Id("a")),
+                        BinaryOp("%",Id("a"),FieldAccess(Id("a"),Id("a")))
+                ))),
+                MethodDecl(Instance(),Id("check"),[],Block([
+                    VarDecl(Id("a"),ArrayType(3,IntType()),
+                        BinaryOp("*",
+                            BinaryOp("==",Id("a"),Id("a")),
+                            FieldAccess(Id("a"),Id("$a")))),
+                    VarDecl(Id("a"),StringType(),
+                        BinaryOp("-",
+                            UnaryOp("-",Id("a")),
+                            BinaryOp("%",Id("a"),ArrayCell(Id("a"),[Id("a")]))))]))
+        ])]))
+        self.assertTrue(TestAST.test(input,expect,331))
 
-    # def test_332(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,332))
+    def test_332(self):
+        input = """Class Expr {
+            Var a: Rect = New Rect() + New PrevRect();
+            Var a: Rect = (a >= b) || !(a < b);
+            check() {
+                {
+                    Var a: Rect = New Rect() + New PrevRect();
+                    Var a: Rect = (a >= b) || !(a < b);
+                }
+            }
+            
+        }"""
+        expect = str(Program([ClassDecl(Id("Expr"),[
+            AttributeDecl(Instance(),VarDecl(Id("a"),ClassType(Id("Rect")),
+                BinaryOp("+",
+                    NewExpr(Id("Rect"),[]),
+                    NewExpr(Id("PrevRect"),[])))),
+            AttributeDecl(Instance(),VarDecl(Id("a"),ClassType(Id("Rect")),
+                BinaryOp("||",
+                    BinaryOp(">=",Id("a"),Id("b")),
+                    UnaryOp("!",BinaryOp("<",Id("a"),Id("b")))))),
+            MethodDecl(Instance(),Id("check"),[],Block([
+                Block([
+                    VarDecl(Id("a"),ClassType(Id("Rect")),
+                        BinaryOp("+",
+                            NewExpr(Id("Rect"),[]),
+                            NewExpr(Id("PrevRect"),[]))),
+                    VarDecl(Id("a"),ClassType(Id("Rect")),
+                        BinaryOp("||",
+                            BinaryOp(">=",Id("a"),Id("b")),
+                            UnaryOp("!",BinaryOp("<",Id("a"),Id("b")))))])]))])]))
+        self.assertTrue(TestAST.test(input,expect,332))
 
-    # def test_333(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,333))
+    def test_333(self):
+        input = """Class ArrayLit {
+            Var a: Array[Int, 3] = Array(0, 1, 0 + 1);
+            Var a: Array[String, 4] = Array("S", "3", "X", "Y");
+            Var a: Array[Array[String, 1], 2] = Array(
+                Array("This", "is"),
+                Array("a", "multi-dimensional"),
+                Array("array", "!")
+            );
+            check() {
+                Var a: Array[Array[String, 1], 2] = Array(
+                    Array("This", "is"),
+                    Array("a", "multi-dimensional"),
+                    Array("array", "!")
+                );
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("ArrayLit"),[
+            AttributeDecl(Instance(),VarDecl(Id("a"),ArrayType(3,IntType()),
+                ArrayLiteral([IntLiteral(0),IntLiteral(1),BinaryOp("+",IntLiteral(0),IntLiteral(1))]))),
+            AttributeDecl(Instance(),VarDecl(Id("a"),ArrayType(4,StringType()),
+                ArrayLiteral([StringLiteral("S"),StringLiteral("3"),StringLiteral("X"),StringLiteral("Y")]))),
+            AttributeDecl(Instance(),VarDecl(Id("a"),ArrayType(2,ArrayType(1,StringType())),
+                ArrayLiteral([
+                    ArrayLiteral([StringLiteral("This"),StringLiteral("is")]),
+                    ArrayLiteral([StringLiteral("a"),StringLiteral("multi-dimensional")]),
+                    ArrayLiteral([StringLiteral("array"),StringLiteral("!")])
+                ]))),
+            MethodDecl(Instance(),Id("check"),[],Block([
+                VarDecl(Id("a"),ArrayType(2,ArrayType(1,StringType())),
+                    ArrayLiteral([
+                        ArrayLiteral([StringLiteral("This"),StringLiteral("is")]),
+                        ArrayLiteral([StringLiteral("a"),StringLiteral("multi-dimensional")]),
+                        ArrayLiteral([StringLiteral("array"),StringLiteral("!")])
+                    ]))]))])]))
+        self.assertTrue(TestAST.test(input,expect,333))
 
-    # def test_334(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,334))
+    def test_334(self):
+        input = """Class ArrayLit {
+            Var a: Array[String, 2] = Array(New Rect(), New Rect());
+            check() {
+                Var a: Array[String, 2] = Array(New Rect(), New Rect());
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("ArrayLit"),[
+            AttributeDecl(Instance(),VarDecl(Id("a"),ArrayType(2,StringType()),
+                ArrayLiteral([NewExpr(Id("Rect"),[]),NewExpr(Id("Rect"),[])]))),
+            MethodDecl(Instance(),Id("check"),[],Block([
+                VarDecl(Id("a"),ArrayType(2,StringType()),
+                ArrayLiteral([NewExpr(Id("Rect"),[]),NewExpr(Id("Rect"),[])]))]))])]))
+        self.assertTrue(TestAST.test(input,expect,334))
 
-    # def test_335(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,335))
+    def test_335(self):
+        input = """Class Stmt {
+            check() {
+                Var a: Int;
+                Var a: Int = 0;
+                Var a: String = "Init";
+                Var a: Object;
+                Var a: Object = New Object();
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[
+            MethodDecl(Instance(),Id("check"),[],Block([
+                VarDecl(Id("a"),IntType()),
+                VarDecl(Id("a"),IntType(),IntLiteral(0)),
+                VarDecl(Id("a"),StringType(),StringLiteral("Init")),
+                VarDecl(Id("a"),ClassType(Id("Object")),NullLiteral()),
+                VarDecl(Id("a"),ClassType(Id("Object")),NewExpr(Id("Object"),[]))]))])]))
+        self.assertTrue(TestAST.test(input,expect,335))
 
-    # def test_336(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,336))
+    def test_336(self):
+        input = """Class Stmt {
+            check() {
+                Val a: Int;
+                Val a: Int = 0;
+                Val a: String = "Init";
+                Val a: Object;
+                Val a: Object = New Object();
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[
+            MethodDecl(Instance(),Id("check"),[],Block([
+                ConstDecl(Id("a"),IntType()),
+                ConstDecl(Id("a"),IntType(),IntLiteral(0)),
+                ConstDecl(Id("a"),StringType(),StringLiteral("Init")),
+                ConstDecl(Id("a"),ClassType(Id("Object")),NullLiteral()),
+                ConstDecl(Id("a"),ClassType(Id("Object")),NewExpr(Id("Object"),[]))]))])]))
+        self.assertTrue(TestAST.test(input,expect,336))
 
-    # def test_337(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,337))
+    def test_337(self):
+        input = """Class Stmt {
+            check() {
+                a = 1;
+                a = Null;
+                a = Self.instance;
+                a = Something::$static;
+                a = a.a();
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[
+            MethodDecl(Instance(),Id("check"),[],Block([
+                Assign(Id("a"),IntLiteral(1)),
+                Assign(Id("a"),NullLiteral()),
+                Assign(Id("a"),FieldAccess(SelfLiteral(),Id("instance"))),
+                Assign(Id("a"),FieldAccess(Id("Something"),Id("$static"))),
+                Assign(Id("a"),CallExpr(Id("a"),Id("a"),[]))]))])]))
+        self.assertTrue(TestAST.test(input,expect,337))
 
-    # def test_338(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,338))
+    def test_338(self):
+        input = """Class Stmt {
+            check() {
+                a.a = a + 1_123.e-2;
+                (1 + 2).a = Null;
+                Null.value = Null;
+                a.methodcall().a = True;
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            Assign(
+                FieldAccess(Id("a"),Id("a")),
+                BinaryOp("+",Id("a"),FloatLiteral(1123.e-2))),
+            Assign(
+                FieldAccess(BinaryOp("+",IntLiteral(1),IntLiteral(2)),Id("a")),
+                NullLiteral()),
+            Assign(
+                FieldAccess(NullLiteral(),Id("value")),
+                NullLiteral()),
+            Assign(
+                FieldAccess(CallExpr(Id("a"),Id("methodcall"),[]),Id("a")),
+                BooleanLiteral(True))]))])]))
+        self.assertTrue(TestAST.test(input,expect,338))
 
-    # def test_339(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,339))
+    def test_339(self):
+        input = """Class Stmt {
+            check() {
+                a[1] = New Variable();
+                a[1]["index"] = something;
+                some.methodCall()[0] = something;
+                Array(0, 1, 2)[1] = something;
+            }
+        }"""
+        # TODO: This is not the way to represent multidimensional array ?????
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            Assign(ArrayCell(Id("a"),[IntLiteral(1)]),NewExpr(Id("Variable"),[])),
+            Assign(
+                ArrayCell(ArrayCell(Id("a"),[IntLiteral(1)]),[StringLiteral("index")]),
+                Id("something")),
+            Assign(
+                ArrayCell(CallExpr(Id("some"),Id("methodCall"),[]),[IntLiteral(0)]),
+                Id("something")),
+            Assign(
+                ArrayCell(ArrayLiteral([IntLiteral(0),IntLiteral(1),IntLiteral(2)]),[IntLiteral(1)]),
+                Id("something"))]))])]))
+        self.assertTrue(TestAST.test(input,expect,339))
 
-    # def test_340(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,340))
+    def test_340(self):
+        input = """Class Stmt {
+            check() {
+                If (condition) {
+                    ## do something ##
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+                If(Id("condition"),Block([]))]))])]))
+        self.assertTrue(TestAST.test(input,expect,340))
 
-    # def test_341(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,341))
+    def test_341(self):
+        input = """Class Stmt {
+            check() {
+                If (condition) {
+                    a.a = a + 1_123.e-2;
+                }
+                Else {
+                    a.a = a + 1_123.e-2;
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            If(Id("condition"),Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))]),
+            Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))]))]))])]))
+        self.assertTrue(TestAST.test(input,expect,341))
 
-    # def test_342(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,342))
+    def test_342(self):
+        input = """Class Stmt {
+            check() {
+                If (condition) {
+                    a.a = a + 1_123.e-2;
+                }
+                Elseif (!condition) {
+                    Val a: String = "Init";
+                    a = a + 2;
+                }
+                Else {
+                    a.a = a + 1_123.e-2;
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            If(Id("condition"),Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))]),
+            If(UnaryOp("!",Id("condition")),Block([
+                ConstDecl(Id("a"),StringType(),StringLiteral("Init")),
+                Assign(Id("a"),BinaryOp("+",Id("a"),IntLiteral(2)))]),
+            Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))])))]))])]))
+        self.assertTrue(TestAST.test(input,expect,342))
 
-    # def test_343(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,343))
+    def test_343(self):
+        input = """Class Stmt {
+            check() {
+                If (condition) {
+                    a.a = a + 1_123.e-2;
+                }
+                Elseif (!condition) {
+                    Val a: String = "Init";
+                    a = a + 2;
+                }
+                Elseif (!condition) {
+                    Val a: String = "Init";
+                    a = a + 2;
+                }
+                Elseif (!condition) {
+                    Val a: String = "Init";
+                    a = a + 2;
+                }
+                Else {
+                    a.a = a + 1_123.e-2;
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            If(Id("condition"),Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))]),
+            If(UnaryOp("!",Id("condition")),Block([
+                ConstDecl(Id("a"),StringType(),StringLiteral("Init")),
+                Assign(Id("a"),BinaryOp("+",Id("a"),IntLiteral(2)))]),
+            If(UnaryOp("!",Id("condition")),Block([
+                ConstDecl(Id("a"),StringType(),StringLiteral("Init")),
+                Assign(Id("a"),BinaryOp("+",Id("a"),IntLiteral(2)))]),
+            If(UnaryOp("!",Id("condition")),Block([
+                ConstDecl(Id("a"),StringType(),StringLiteral("Init")),
+                Assign(Id("a"),BinaryOp("+",Id("a"),IntLiteral(2)))]),
+            Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))])))))]))])]))
+        self.assertTrue(TestAST.test(input,expect,343))
 
-    # def test_344(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,344))
+    def test_344(self):
+        input = """Class Stmt {
+            check() {
+                If (condition) {
+                    a.a = a + 1_123.e-2;
+                }
+                Elseif (!condition) {
+                    Val a: String = "Init";
+                    a = a + 2;
+                    If (a == a) {
+                        ## do nothing ##
+                    }
+                    Else {
+                        ## do something ##
+                    }
+                }
+                Else {
+                    a.a = a + 1_123.e-2;
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            If(Id("condition"),Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))]),
+            If(UnaryOp("!",Id("condition")),Block([
+                ConstDecl(Id("a"),StringType(),StringLiteral("Init")),
+                Assign(Id("a"),BinaryOp("+",Id("a"),IntLiteral(2))),
+                If(BinaryOp("==",Id("a"),Id("a")),Block([
 
-    # def test_345(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,345))
+                ]),Block([
 
-    # def test_346(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,346))
+                ]))]),
+            Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))])))]))])]))
+        self.assertTrue(TestAST.test(input,expect,344))
 
-    # def test_347(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,347))
+    def test_345(self):
+        input = """Class Stmt {
+            check() {
+                If (condition) {
+                    a.a = a + 1_123.e-2;
+                }
+                Elseif (!condition) {
+                    If (a == a) {
+                        If (a != a) {
+                            If (nestedIfs) {
+                                Object.callAFunction();
+                            }
+                        }
+                    }
+                    Else {
+                        ## do something ##
+                    }
+                }
+                Else {
+                    a.a = a + 1_123.e-2;
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            If(Id("condition"),Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))]),
+            If(UnaryOp("!",Id("condition")),Block([
+                If(BinaryOp("==",Id("a"),Id("a")),Block([
+                    If(BinaryOp("!=",Id("a"),Id("a")),Block([
+                        If(Id("nestedIfs"),Block([
+                            CallStmt(Id("Object"),Id("callAFunction"),[])]))]))]),
+                Block([]))
+            ]),Block([
+                Assign(FieldAccess(Id("a"),Id("a")),BinaryOp("+",Id("a"),FloatLiteral(1123.e-2)))])))]))])]))
+        self.assertTrue(TestAST.test(input,expect,345))
 
-    # def test_348(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,348))
+    def test_346(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 1 .. 10) {
+                    Out.printInt(i);
+                }
+            }
+        }"""
+        #Program([ClassDecl(Id(Stmt),[MethodDecl(Id(check),Instance,[],Block([For(Id(i),IntLit(1),IntLit(10),IntLit(1),Block([Call(Id(Out),Id(printInt),[Id(i)])])])]))])])
+        #Program([ClassDecl(Id(Stmt),[MethodDecl(Id(check),Instance,[],Block([For(Id(i),IntLit(1),IntLit(10),Block([Call(Id(Out),Id(printInt),[Id(i)])])])]))])])
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            For(Id("i"),IntLiteral(1),IntLiteral(10),Block([
+                CallStmt(Id("Out"),Id("printInt"),[Id("i")])]),
+                IntLiteral(1))
+            ]))])]))
+        self.assertTrue(TestAST.test(input,expect,346))
 
-    # def test_349(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,349))
+    def test_347(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 10 .. 1) {
+                    Out.printInt(i);
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            For(Id("i"),IntLiteral(10),IntLiteral(1),Block([
+                CallStmt(Id("Out"),Id("printInt"),[Id("i")])]),
+                IntLiteral(1)
+            )]))])]))
+        self.assertTrue(TestAST.test(input,expect,347))
+
+    def test_348(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 0 .. array.size By 2) {
+                    a.append(array[i]);
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            For(Id("i"),IntLiteral(0),FieldAccess(Id("array"),Id("size")),Block([
+                CallStmt(Id("a"),Id("append"),[ArrayCell(Id("array"),[Id("i")])])]),
+                IntLiteral(2))]))])]))
+        self.assertTrue(TestAST.test(input,expect,348))
+
+    def test_349(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 1 .. 10 By -2) {
+                    If (i == 5) {
+                        Out.print("Infinite loop maybe");
+                    }
+                }
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            For(Id("i"),IntLiteral(1),IntLiteral(10),Block([
+                If(BinaryOp("==",Id("i"),IntLiteral(5)),Block([
+                    CallStmt(Id("Out"),Id("print"),[StringLiteral("Infinite loop maybe")])]))]),
+                UnaryOp("-",IntLiteral(2))
+            )]))])]))
+        self.assertTrue(TestAST.test(input,expect,349))
 
     # def test_350(self):
     #     input = """"""

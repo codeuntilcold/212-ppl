@@ -147,16 +147,6 @@ class ASTGeneration(D96Visitor):
         ) for name in idents]
 
 
-    # Visit a parse tree produced by D96Parser#blockStat.
-    def visitBlockStat(self, ctx:D96Parser.BlockStatContext):
-        return Block(self.visit(ctx.statList()))
-
-
-    # Visit a parse tree produced by D96Parser#statList.
-    def visitStatList(self, ctx:D96Parser.StatListContext):
-        return [] if ctx.getChildCount() == 0 else self.visit(ctx.stat()) + self.visit(ctx.statList())
-
-
     # Visit a parse tree produced by D96Parser#expr.
     def visitExpr(self, ctx:D96Parser.ExprContext):
         return self.visit(ctx.getChild(0)) if ctx.getChildCount() == 1 else BinaryOp(
@@ -279,10 +269,18 @@ class ASTGeneration(D96Visitor):
                 
         elif ctx.FLOATLIT(): return FloatLiteral(float(ctx.FLOATLIT().getText()))
         elif ctx.BOOLLIT(): return BooleanLiteral(ctx.BOOLLIT().getText() == "True")
-
-        # TODO: Does string behave normally with escape '"
         elif ctx.STRINGLIT(): return StringLiteral(ctx.STRINGLIT().getText())
         else: return self.visit(ctx.arrayLit())
+
+
+    # Visit a parse tree produced by D96Parser#blockStat.
+    def visitBlockStat(self, ctx:D96Parser.BlockStatContext):
+        return Block(self.visit(ctx.statList()))
+
+
+    # Visit a parse tree produced by D96Parser#statList.
+    def visitStatList(self, ctx:D96Parser.StatListContext):
+        return [] if ctx.getChildCount() == 0 else self.visit(ctx.stat()) + self.visit(ctx.statList())
 
 
     # Visit a parse tree produced by D96Parser#stat.
@@ -291,6 +289,8 @@ class ASTGeneration(D96Visitor):
             return [Return()] if ctx.getChildCount() == 2 else [Return(self.visit(ctx.expr()))]
         elif ctx.BREAK(): return [Break()]
         elif ctx.CONTINUE(): return [Continue()]
+        elif ctx.blockStat():
+            return [self.visit(ctx.blockStat())]
         else:
             return self.visit(ctx.getChild(0))
 
@@ -342,8 +342,6 @@ class ASTGeneration(D96Visitor):
         # [ (Id(), Type(), Expr()) ]
         ident = Id(ctx.ID().getText())
         rhs = self.visit(ctx.expr())
-
-        # TODO: Thứ tự của các khởi tạo bị ngược rùi nè
 
         if ctx.COMMA():
             rest = self.visit(ctx.varsInit())
