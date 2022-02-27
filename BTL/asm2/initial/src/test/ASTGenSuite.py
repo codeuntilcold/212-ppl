@@ -824,8 +824,8 @@ class ASTGenSuite(unittest.TestCase):
             check() {
                 a[1] = New Variable();
                 a[1]["index"] = something;
-                a[1]["index"]["of"]["lhs"] = something;
-                some.methodCall()[0] = something;
+                a[1]["index"]["of"]["lhs"] = something[0][1][2];
+                some.methodCall()[0] = something.a().b().c();
                 Array(0, 1, 2)[1] = something;
             }
         }"""
@@ -838,10 +838,10 @@ class ASTGenSuite(unittest.TestCase):
                 Id("something")),
             Assign(
                 ArrayCell(Id("a"),[IntLiteral(1),StringLiteral("index"),StringLiteral("of"),StringLiteral("lhs")]),
-                Id("something")),
+                ArrayCell(Id("something"), [IntLiteral(0), IntLiteral(1), IntLiteral(2)])),
             Assign(
                 ArrayCell(CallExpr(Id("some"),Id("methodCall"),[]),[IntLiteral(0)]),
-                Id("something")),
+                CallExpr(CallExpr(CallExpr(Id("something"), Id("a"), []), Id("b"), []), Id("c"), [])),
             Assign(
                 ArrayCell(ArrayLiteral([IntLiteral(0),IntLiteral(1),IntLiteral(2)]),[IntLiteral(1)]),
                 Id("something"))]))])]))
@@ -1077,352 +1077,1013 @@ class ASTGenSuite(unittest.TestCase):
             )]))])]))
         self.assertTrue(TestAST.test(input,expect,349))
 
-    # def test_350(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,350))
+    # TODO: Test method invocation rigorously: a.calll().several().method();
 
-    # def test_351(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,351))
+    def test_350(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 1 .. 10 By -2) {
+                    If (i == 5) {
+                        Out.print("Infinite loop maybe");
+                        Break;
+                    }
+                }
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+                For(Id("i"),IntLiteral(1),IntLiteral(10),Block([
+                    If(BinaryOp("==",Id("i"),IntLiteral(5)),Block([
+                        CallStmt(Id("Out"),Id("print"),[StringLiteral("Infinite loop maybe")]),
+                        Break()
+                    ]))]),
+                UnaryOp("-",IntLiteral(2))
+            )]))])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,350))
 
-    # def test_352(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,352))
+    def test_351(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 1 .. 10 By -2) {
+                    If (i == 5) {
+                        Out.print("Infinite loop maybe");
+                        Continue;
+                    }
+                }
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+                For(Id("i"),IntLiteral(1),IntLiteral(10),Block([
+                    If(BinaryOp("==",Id("i"),IntLiteral(5)),Block([
+                        CallStmt(Id("Out"),Id("print"),[StringLiteral("Infinite loop maybe")]),
+                        Continue()
+                    ]))]),
+                UnaryOp("-",IntLiteral(2))
+            )]))])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,351))
 
-    # def test_353(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,353))
+    def test_352(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 1 .. 10 By -2) {
+                    If (i == 5) {
+                        Out.print("Infinite loop maybe");
+                        Return;
+                    }
+                }
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+                For(Id("i"),IntLiteral(1),IntLiteral(10),Block([
+                    If(BinaryOp("==",Id("i"),IntLiteral(5)),Block([
+                        CallStmt(Id("Out"),Id("print"),[StringLiteral("Infinite loop maybe")]),
+                        Return()
+                    ]))]),
+                UnaryOp("-",IntLiteral(2))
+            )]))])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,352))
 
-    # def test_354(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,354))
+    def test_353(self):
+        input = """Class Stmt {
+            check() {
+                Foreach (i In 1 .. 10 By -2) {
+                    If (i == 5) {
+                        Out.print("Infinite loop maybe");
+                        Return an[arbitrary][expression];
+                    }
+                }
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+                For(Id("i"),IntLiteral(1),IntLiteral(10),Block([
+                    If(BinaryOp("==",Id("i"),IntLiteral(5)),Block([
+                        CallStmt(Id("Out"),Id("print"),[StringLiteral("Infinite loop maybe")]),
+                        Return(ArrayCell(Id("an"), [Id("arbitrary"), Id("expression")]))
+                    ]))]),
+                UnaryOp("-",IntLiteral(2))
+            )]))])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,353))
 
-    # def test_355(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,355))
+    def test_354(self):
+        input = """Class Stmt {
+            check() {
+                method.invocation();
+                method.invocation(with);
+                method.invocation(with, many, parameters);
+                method.invocation(with.expr, New as(), pa[ra][me][ters]);
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            CallStmt(Id("method"), Id("invocation"), []),
+            CallStmt(Id("method"), Id("invocation"), [Id("with")]),
+            CallStmt(Id("method"), Id("invocation"), [Id("with"), Id("many"), Id("parameters")]),
+            CallStmt(Id("method"), Id("invocation"), [
+                FieldAccess(Id("with"), Id("expr")),
+                NewExpr(Id("as"), []),
+                ArrayCell(Id("pa"), [Id("ra"), Id("me"), Id("ters")])
+            ]),
+        ]))])]))
+        self.assertTrue(TestAST.test(input,expect,354))
 
-    # def test_356(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,356))
+    def test_355(self):
+        input = """Class Stmt {
+            check() {
+                some.random(method).invocation();
+                some.random(method).invocation(with);
+                some.random(method).invocation(with, many, parameters);
+                some.stupid().random(method).invocation(with.expr, New as(), pa[ra][me][ters]);
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            CallStmt(CallExpr(Id("some"), Id("random"), [Id("method")]), Id("invocation"), []),
+            CallStmt(CallExpr(Id("some"), Id("random"), [Id("method")]), Id("invocation"), [Id("with")]),
+            CallStmt(CallExpr(Id("some"), Id("random"), [Id("method")]), Id("invocation"), [Id("with"), Id("many"), Id("parameters")]),
+            CallStmt(CallExpr(CallExpr(Id("some"), Id("stupid"), []), Id("random"), [Id("method")]), Id("invocation"), [
+                FieldAccess(Id("with"), Id("expr")),
+                NewExpr(Id("as"), []),
+                ArrayCell(Id("pa"), [Id("ra"), Id("me"), Id("ters")])
+            ]),
+        ]))])]))
+        self.assertTrue(TestAST.test(input,expect,355))
+
+    def test_356(self):
+        input = """Class Stmt {
+            check() {
+                {
+                    {
+                        nested = block;
+                        {
+                            Var decl: Int;
+                        }
+                    }
+                    {}
+                }
+                {}
+            }
+        }"""
+        expect = str(Program([ClassDecl(Id("Stmt"),[MethodDecl(Instance(),Id("check"),[],Block([
+            Block([
+                Block([
+                    Assign(Id("nested"), Id("block")),
+                    Block([
+                        VarDecl(Id("decl"), IntType())
+                    ])
+                ]),
+                Block([])
+            ]),
+            Block([])
+        ]))])]))
+        self.assertTrue(TestAST.test(input,expect,356))
 
     # def test_357(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,357))
 
     # def test_358(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,358))
 
     # def test_359(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,359))
 
     # def test_360(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,360))
 
     # def test_361(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,361))
 
     # def test_362(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,362))
 
     # def test_363(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,363))
 
     # def test_364(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,364))
 
     # def test_365(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,365))
 
     # def test_366(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,366))
 
     # def test_367(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,367))
 
     # def test_368(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,368))
 
     # def test_369(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,369))
 
     # def test_370(self):
     #     input = """"""
     #     expect = str(Program([
-    #
+    
     #     ]))
     #     self.assertTrue(TestAST.test(input,expect,370))
 
-    # def test_371(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,371))
+    def test_371(self):
+        input = """Class Program {
+            main() {
+                Out.print("Hello world");
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[StringLit(Hello world)])]))])])"
+        self.assertTrue(TestAST.test(input,expect,371))
 
-    # def test_372(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,372))
+    def test_372(self):
+        input = """Class Program {
+            add(a, b: Object) {
+                Return a + b;
+            }
+            main() {
+                Out.print(Self.add(10, 11));
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Program),[MethodDecl(Id(add),Instance,[param(Id(a),ClassType(Id(Object))),param(Id(b),ClassType(Id(Object)))],Block([Return(BinaryOp(+,Id(a),Id(b)))])),MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[CallExpr(Self(),Id(add),[IntLit(10),IntLit(11)])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,372))
 
-    # def test_373(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,373))
+    def test_373(self):
+        input = """Class Program {
+            square_root(n: Float) {
+                If (n < 0) { Return "Invalid input\\n"; }
+                Var left, right, middle: Float;
+                If (n < 1) { 
+                    left = n; 
+                    right = 1; 
+                }
+                Else { 
+                    left = 0; 
+                    right = n; 
+                }
+                Foreach (i In 1 .. 1000) {
+                    middle = (left + right) / 2;
+                    If (middle * middle < n) { right = middle; }
+                    Else { left = middle; }
+                }
+                Return middle;
+            }
+            main() {
+                Out.print(Self.square_root(2));
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Program),[MethodDecl(Id(square_root),Instance,[param(Id(n),FloatType)],Block([If(BinaryOp(<,Id(n),IntLit(0)),Block([Return(StringLit(Invalid input\\n))])),VarDecl(Id(left),FloatType),VarDecl(Id(right),FloatType),VarDecl(Id(middle),FloatType),If(BinaryOp(<,Id(n),IntLit(1)),Block([AssignStmt(Id(left),Id(n)),AssignStmt(Id(right),IntLit(1))]),Block([AssignStmt(Id(left),IntLit(0)),AssignStmt(Id(right),Id(n))])),For(Id(i),IntLit(1),IntLit(1000),IntLit(1),Block([AssignStmt(Id(middle),BinaryOp(/,BinaryOp(+,Id(left),Id(right)),IntLit(2))),If(BinaryOp(<,BinaryOp(*,Id(middle),Id(middle)),Id(n)),Block([AssignStmt(Id(right),Id(middle))]),Block([AssignStmt(Id(left),Id(middle))]))])]),Return(Id(middle))])),MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[CallExpr(Self(),Id(square_root),[IntLit(2)])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,373))
 
-    # def test_374(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,374))
+    def test_374(self):
+        input = """Class Program {
+            main() {
+                Out.print(Math.sqrt(2));
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[CallExpr(Id(Math),Id(sqrt),[IntLit(2)])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,374))
 
-    # def test_375(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,375))
+    def test_375(self):
+        input = """
+        Class Triangle {
+            Var a, b, angle: Float;
+            Constructor(a, b, angle: Float) {
+                Self.a = a;
+                Self.b = b;
+                Self.angle = angle;
+            }
+            area() {
+                Return 1/2 * a * b * Math.sin(angle);
+            }
+        }
+        Class Program {
+            main() {
+                Out.print((New Triangle(3, 5, Math.PI / 3)).area());
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Triangle),[AttributeDecl(Instance,VarDecl(Id(a),FloatType)),AttributeDecl(Instance,VarDecl(Id(b),FloatType)),AttributeDecl(Instance,VarDecl(Id(angle),FloatType)),MethodDecl(Id(Constructor),Instance,[param(Id(a),FloatType),param(Id(b),FloatType),param(Id(angle),FloatType)],Block([AssignStmt(FieldAccess(Self(),Id(a)),Id(a)),AssignStmt(FieldAccess(Self(),Id(b)),Id(b)),AssignStmt(FieldAccess(Self(),Id(angle)),Id(angle))])),MethodDecl(Id(area),Instance,[],Block([Return(BinaryOp(*,BinaryOp(*,BinaryOp(*,BinaryOp(/,IntLit(1),IntLit(2)),Id(a)),Id(b)),CallExpr(Id(Math),Id(sin),[Id(angle)])))]))]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[CallExpr(NewExpr(Id(Triangle),[IntLit(3),IntLit(5),BinaryOp(/,FieldAccess(Id(Math),Id(PI)),IntLit(3))]),Id(area),[])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,375))
 
-    # def test_376(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,376))
+    def test_376(self):
+        input = """Class Program {
+            checkNonNegative(n: Int) {
+                Return n >= 0;
+            }
+            main() {
+                Out.print(Self.checkNonNegative(12));
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Program),[MethodDecl(Id(checkNonNegative),Instance,[param(Id(n),IntType)],Block([Return(BinaryOp(>=,Id(n),IntLit(0)))])),MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[CallExpr(Self(),Id(checkNonNegative),[IntLit(12)])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,376))
 
-    # def test_377(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,377))
+    def test_377(self):
+        input = """Class Program {
+            $k2m(k: Float) {
+                Var conv_fac: Float = 0.621371;
+                Return k * conv_fac;
+            }
+            main() {
+                Out.print(Program::$k2m(127));
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Program),[MethodDecl(Id($k2m),Static,[param(Id(k),FloatType)],Block([VarDecl(Id(conv_fac),FloatType,FloatLit(0.621371)),Return(BinaryOp(*,Id(k),Id(conv_fac)))])),MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[CallExpr(Id(Program),Id($k2m),[IntLit(127)])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,377))
 
-    # def test_378(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,378))
+    def test_378(self):
+        input = """Class Program {
+            main() {
+                Var a, b, c: Int;
+                Var max: Int = a;
+                If (b > max) { b = max; }
+                If (c > max) { c = max; }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(a),IntType),VarDecl(Id(b),IntType),VarDecl(Id(c),IntType),VarDecl(Id(max),IntType,Id(a)),If(BinaryOp(>,Id(b),Id(max)),Block([AssignStmt(Id(b),Id(max))])),If(BinaryOp(>,Id(c),Id(max)),Block([AssignStmt(Id(c),Id(max))]))]))])])"
+        self.assertTrue(TestAST.test(input,expect,378))
 
-    # def test_379(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,379))
+    def test_379(self):
+        input = """Class Math {
+            $checkPrime(n: Int) {
+                If (n == 2) { Return True; }
+                Foreach (i In 1 .. n/2) {
+                    If (n % i == 0) { Return True; }
+                }
+                Return False;
+            }
+        }
+        Class Program {
+            main() {
+                Out.print(Math::$checkPrime(2));
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Math),[MethodDecl(Id($checkPrime),Static,[param(Id(n),IntType)],Block([If(BinaryOp(==,Id(n),IntLit(2)),Block([Return(BooleanLit(True))])),For(Id(i),IntLit(1),BinaryOp(/,Id(n),IntLit(2)),IntLit(1),Block([If(BinaryOp(==,BinaryOp(%,Id(n),Id(i)),IntLit(0)),Block([Return(BooleanLit(True))]))])]),Return(BooleanLit(False))]))]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([Call(Id(Out),Id(print),[CallExpr(Id(Math),Id($checkPrime),[IntLit(2)])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,379))
 
-    # def test_380(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,380))
+    def test_380(self):
+        input = """Class Math {
+            $checkPrime(n: Int) {
+                If (n == 2) { Return True; }
+                Foreach (i In 1 .. n/2) {
+                    If (n % i == 0) { Return True; }
+                }
+                Return False;
+            }
+            $printPrimesUpto(n: Int) {
+                Foreach (i In 2 .. n) {
+                    If (Math::$checkPrime(i)) {
+                        Out.print(i);
+                    }
+                }
+            }
+        }
+        Class Program {
+            main() {
+                Math::$printPrimesUpto(127);
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Math),[MethodDecl(Id($checkPrime),Static,[param(Id(n),IntType)],Block([If(BinaryOp(==,Id(n),IntLit(2)),Block([Return(BooleanLit(True))])),For(Id(i),IntLit(1),BinaryOp(/,Id(n),IntLit(2)),IntLit(1),Block([If(BinaryOp(==,BinaryOp(%,Id(n),Id(i)),IntLit(0)),Block([Return(BooleanLit(True))]))])]),Return(BooleanLit(False))])),MethodDecl(Id($printPrimesUpto),Static,[param(Id(n),IntType)],Block([For(Id(i),IntLit(2),Id(n),IntLit(1),Block([If(CallExpr(Id(Math),Id($checkPrime),[Id(i)]),Block([Call(Id(Out),Id(print),[Id(i)])]))])])]))]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([Call(Id(Math),Id($printPrimesUpto),[IntLit(127)])]))])])"
+        self.assertTrue(TestAST.test(input,expect,380))
 
-    # def test_381(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,381))
+    def test_381(self):
+        input = """Class Node {
+            Var value: Int;
+            Var next: Node;
 
-    # def test_382(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,382))
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,381))
 
-    # def test_383(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,383))
+    def test_382(self):
+        input = """
+        Class LinkedList {
+            Var head: Node;
+            Var size: Int;
 
-    # def test_384(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,384))
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
 
-    # def test_385(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,385))
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,382))
 
-    # def test_386(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,386))
+    def test_383(self):
+        input = """Class LinkedList {
+            Var head: Node;
+            Var size: Int;
 
-    # def test_387(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,387))
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
 
-    # def test_388(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,388))
+            size() { Return Self.size; }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
 
-    # def test_389(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,389))
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))])),MethodDecl(Id(size),Instance,[],Block([Return(FieldAccess(Self(),Id(size)))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,383))
 
-    # def test_390(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,390))
+    def test_384(self):
+        input = """Class LinkedList {
+            Var head: Node;
+            Var size: Int;
 
-    # def test_391(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,391))
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
 
-    # def test_392(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,392))
+            size() { Return Self.size; }
+            addFirst(e: Int) {
+                Self.head = New Node(e, Self.head);
+                Self.size = Self.size + 1;
+            }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
 
-    # def test_393(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,393))
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))])),MethodDecl(Id(size),Instance,[],Block([Return(FieldAccess(Self(),Id(size)))])),MethodDecl(Id(addFirst),Instance,[param(Id(e),IntType)],Block([AssignStmt(FieldAccess(Self(),Id(head)),NewExpr(Id(Node),[Id(e),FieldAccess(Self(),Id(head))])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,384))
 
-    # def test_394(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,394))
+    def test_385(self):
+        input = """Class LinkedList {
+            Var head: Node;
+            Var size: Int;
 
-    # def test_395(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,395))
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
 
-    # def test_396(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,396))
+            size() { Return Self.size; }
+            addFirst(e: Int) {
+                Self.head = New Node(e, Self.head);
+                Self.size = Self.size + 1;
+            }
+            addLast(e: Int) {
+                If (Self.size == 0) { 
+                    Self.addFirst(e); Return; 
+                }
+                Var p: Node = Self.head;
+                Foreach(i In 0 .. Self.size - 1) {
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                p.next = New Node(e, Null);
+                Self.size = Self.size + 1;
+            }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
 
-    # def test_397(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,397))
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))])),MethodDecl(Id(size),Instance,[],Block([Return(FieldAccess(Self(),Id(size)))])),MethodDecl(Id(addFirst),Instance,[param(Id(e),IntType)],Block([AssignStmt(FieldAccess(Self(),Id(head)),NewExpr(Id(Node),[Id(e),FieldAccess(Self(),Id(head))])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(addLast),Instance,[param(Id(e),IntType)],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Call(Self(),Id(addFirst),[Id(e)]),Return()])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(p),Id(next)),NewExpr(Id(Node),[Id(e),NullLiteral()])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,385))
 
-    # def test_398(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,398))
+    def test_386(self):
+        input = """Class LinkedList {
+            Var head: Node;
+            Var size: Int;
 
-    # def test_399(self):
-    #     input = """"""
-    #     expect = str(Program([
-    #
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,399))
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
+
+            size() { Return Self.size; }
+            addFirst(e: Int) {
+                Self.head = New Node(e, Self.head);
+                Self.size = Self.size + 1;
+            }
+            addLast(e: Int) {
+                If (Self.size == 0) { 
+                    Self.addFirst(e); Return; 
+                }
+                Var p: Node = Self.head;
+                Foreach(i In 0 .. Self.size - 1) {
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                p.next = New Node(e, Null);
+                Self.size = Self.size + 1;
+            }
+            removeFirst() {
+                Var p: Node = Self.head;
+                Self.head = Self.head.next;
+                Self.size = Self.size - 1;
+                Return p;
+            }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
+
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))])),MethodDecl(Id(size),Instance,[],Block([Return(FieldAccess(Self(),Id(size)))])),MethodDecl(Id(addFirst),Instance,[param(Id(e),IntType)],Block([AssignStmt(FieldAccess(Self(),Id(head)),NewExpr(Id(Node),[Id(e),FieldAccess(Self(),Id(head))])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(addLast),Instance,[param(Id(e),IntType)],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Call(Self(),Id(addFirst),[Id(e)]),Return()])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(p),Id(next)),NewExpr(Id(Node),[Id(e),NullLiteral()])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(removeFirst),Instance,[],Block([VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),AssignStmt(FieldAccess(Self(),Id(head)),FieldAccess(FieldAccess(Self(),Id(head)),Id(next))),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1))),Return(Id(p))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,386))
+
+    def test_387(self):
+        input = """Class LinkedList {
+            Var head: Node;
+            Var size: Int;
+
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
+
+            size() { Return Self.size; }
+            addFirst(e: Int) {
+                Self.head = New Node(e, Self.head);
+                Self.size = Self.size + 1;
+            }
+            addLast(e: Int) {
+                If (Self.size == 0) { 
+                    Self.addFirst(e); Return; 
+                }
+                Var p: Node = Self.head;
+                Foreach(i In 0 .. Self.size - 1) {
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                p.next = New Node(e, Null);
+                Self.size = Self.size + 1;
+            }
+            removeFirst() {
+                If (Self.size == 0) { Return Null; }
+                Var p: Node = Self.head;
+                Self.head = Self.head.next;
+                Self.size = Self.size - 1;
+                Return p;
+            }
+            removeLast() {
+                If (Self.size < 2) { 
+                    Self.removeFirst(); 
+                }
+                Var p: Node = Self.head;
+                Var prev: Node;
+                Foreach(i In 0 .. Self.size - 1) {
+                    prev = p;
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                prev.next = Null;
+                Self.size = Self.size - 1;
+                Return p;
+            }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
+
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))])),MethodDecl(Id(size),Instance,[],Block([Return(FieldAccess(Self(),Id(size)))])),MethodDecl(Id(addFirst),Instance,[param(Id(e),IntType)],Block([AssignStmt(FieldAccess(Self(),Id(head)),NewExpr(Id(Node),[Id(e),FieldAccess(Self(),Id(head))])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(addLast),Instance,[param(Id(e),IntType)],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Call(Self(),Id(addFirst),[Id(e)]),Return()])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(p),Id(next)),NewExpr(Id(Node),[Id(e),NullLiteral()])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(removeFirst),Instance,[],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Return(NullLiteral())])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),AssignStmt(FieldAccess(Self(),Id(head)),FieldAccess(FieldAccess(Self(),Id(head)),Id(next))),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1))),Return(Id(p))])),MethodDecl(Id(removeLast),Instance,[],Block([If(BinaryOp(<,FieldAccess(Self(),Id(size)),IntLit(2)),Block([Call(Self(),Id(removeFirst),[])])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),VarDecl(Id(prev),ClassType(Id(Node)),NullLiteral()),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(prev),Id(p)),AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(prev),Id(next)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1))),Return(Id(p))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,387))
+
+    def test_388(self):
+        input = """Class LinkedList {
+            Var head: Node;
+            Var size: Int;
+
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
+
+            size() { Return Self.size; }
+            addFirst(e: Int) {
+                Self.head = New Node(e, Self.head);
+                Self.size = Self.size + 1;
+            }
+            addLast(e: Int) {
+                If (Self.size == 0) { 
+                    Self.addFirst(e); Return; 
+                }
+                Var p: Node = Self.head;
+                Foreach(i In 0 .. Self.size - 1) {
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                p.next = New Node(e, Null);
+                Self.size = Self.size + 1;
+            }
+            removeFirst() {
+                If (Self.size == 0) { Return Null; }
+                Var p: Node = Self.head;
+                Self.head = Self.head.next;
+                Self.size = Self.size - 1;
+                Return p;
+            }
+            removeLast() {
+                If (Self.size < 2) { 
+                    Self.removeFirst(); 
+                }
+                Var p: Node = Self.head;
+                Var prev: Node;
+                Foreach(i In 0 .. Self.size - 1) {
+                    prev = p;
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                prev.next = Null;
+                Self.size = Self.size - 1;
+                Return p;
+            }
+            contains(e: Int) {
+                Var p: Node = Self.head;
+                Foreach(i In 0 .. Self.size) {
+                    If (p.value == e) {
+                        Return True;
+                    }
+                    Else {
+                        p = p.next;
+                    }
+                }
+                Return False;
+            }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
+
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))])),MethodDecl(Id(size),Instance,[],Block([Return(FieldAccess(Self(),Id(size)))])),MethodDecl(Id(addFirst),Instance,[param(Id(e),IntType)],Block([AssignStmt(FieldAccess(Self(),Id(head)),NewExpr(Id(Node),[Id(e),FieldAccess(Self(),Id(head))])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(addLast),Instance,[param(Id(e),IntType)],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Call(Self(),Id(addFirst),[Id(e)]),Return()])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(p),Id(next)),NewExpr(Id(Node),[Id(e),NullLiteral()])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(removeFirst),Instance,[],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Return(NullLiteral())])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),AssignStmt(FieldAccess(Self(),Id(head)),FieldAccess(FieldAccess(Self(),Id(head)),Id(next))),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1))),Return(Id(p))])),MethodDecl(Id(removeLast),Instance,[],Block([If(BinaryOp(<,FieldAccess(Self(),Id(size)),IntLit(2)),Block([Call(Self(),Id(removeFirst),[])])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),VarDecl(Id(prev),ClassType(Id(Node)),NullLiteral()),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(prev),Id(p)),AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(prev),Id(next)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1))),Return(Id(p))])),MethodDecl(Id(contains),Instance,[param(Id(e),IntType)],Block([VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),For(Id(i),IntLit(0),FieldAccess(Self(),Id(size)),IntLit(1),Block([If(BinaryOp(==,FieldAccess(Id(p),Id(value)),Id(e)),Block([Return(BooleanLit(True))]),Block([AssignStmt(Id(p),FieldAccess(Id(p),Id(next)))]))])]),Return(BooleanLit(False))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))])])"
+        self.assertTrue(TestAST.test(input,expect,388))
+
+    def test_389(self):
+        input = """Class LinkedList {
+            Var head: Node;
+            Var size: Int;
+
+            Constructor() {
+                Self.head = Null;
+                Self.size = 0;
+            }
+
+            size() { Return Self.size; }
+            addFirst(e: Int) {
+                Self.head = New Node(e, Self.head);
+                Self.size = Self.size + 1;
+            }
+            addLast(e: Int) {
+                If (Self.size == 0) { 
+                    Self.addFirst(e); Return; 
+                }
+                Var p: Node = Self.head;
+                Foreach(i In 0 .. Self.size - 1) {
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                p.next = New Node(e, Null);
+                Self.size = Self.size + 1;
+            }
+            removeFirst() {
+                If (Self.size == 0) { Return Null; }
+                Var p: Node = Self.head;
+                Self.head = Self.head.next;
+                Self.size = Self.size - 1;
+                Return p;
+            }
+            removeLast() {
+                If (Self.size < 2) { 
+                    Self.removeFirst(); 
+                }
+                Var p: Node = Self.head;
+                Var prev: Node;
+                Foreach(i In 0 .. Self.size - 1) {
+                    prev = p;
+                    p = head.next;
+                }
+                ## p is pointing at last ele ##
+                prev.next = Null;
+                Self.size = Self.size - 1;
+                Return p;
+            }
+            contains(e: Int) {
+                Var p: Node = Self.head;
+                Foreach(i In 0 .. Self.size) {
+                    If (p.value == e) {
+                        Return True;
+                    }
+                    Else {
+                        p = p.next;
+                    }
+                }
+                Return False;
+            }
+        }
+        
+        Class Node {
+            Var value: Int;
+            Var next: Node;
+
+            Constructor(value: Int; next: Node) {
+                Self.value = value;
+                Self.next = next;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: LinkedList = New LinkedList();
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[AttributeDecl(Instance,VarDecl(Id(head),ClassType(Id(Node)),NullLiteral())),AttributeDecl(Instance,VarDecl(Id(size),IntType)),MethodDecl(Id(Constructor),Instance,[],Block([AssignStmt(FieldAccess(Self(),Id(head)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),IntLit(0))])),MethodDecl(Id(size),Instance,[],Block([Return(FieldAccess(Self(),Id(size)))])),MethodDecl(Id(addFirst),Instance,[param(Id(e),IntType)],Block([AssignStmt(FieldAccess(Self(),Id(head)),NewExpr(Id(Node),[Id(e),FieldAccess(Self(),Id(head))])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(addLast),Instance,[param(Id(e),IntType)],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Call(Self(),Id(addFirst),[Id(e)]),Return()])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(p),Id(next)),NewExpr(Id(Node),[Id(e),NullLiteral()])),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(+,FieldAccess(Self(),Id(size)),IntLit(1)))])),MethodDecl(Id(removeFirst),Instance,[],Block([If(BinaryOp(==,FieldAccess(Self(),Id(size)),IntLit(0)),Block([Return(NullLiteral())])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),AssignStmt(FieldAccess(Self(),Id(head)),FieldAccess(FieldAccess(Self(),Id(head)),Id(next))),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1))),Return(Id(p))])),MethodDecl(Id(removeLast),Instance,[],Block([If(BinaryOp(<,FieldAccess(Self(),Id(size)),IntLit(2)),Block([Call(Self(),Id(removeFirst),[])])),VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),VarDecl(Id(prev),ClassType(Id(Node)),NullLiteral()),For(Id(i),IntLit(0),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1)),IntLit(1),Block([AssignStmt(Id(prev),Id(p)),AssignStmt(Id(p),FieldAccess(Id(head),Id(next)))])]),AssignStmt(FieldAccess(Id(prev),Id(next)),NullLiteral()),AssignStmt(FieldAccess(Self(),Id(size)),BinaryOp(-,FieldAccess(Self(),Id(size)),IntLit(1))),Return(Id(p))])),MethodDecl(Id(contains),Instance,[param(Id(e),IntType)],Block([VarDecl(Id(p),ClassType(Id(Node)),FieldAccess(Self(),Id(head))),For(Id(i),IntLit(0),FieldAccess(Self(),Id(size)),IntLit(1),Block([If(BinaryOp(==,FieldAccess(Id(p),Id(value)),Id(e)),Block([Return(BooleanLit(True))]),Block([AssignStmt(Id(p),FieldAccess(Id(p),Id(next)))]))])]),Return(BooleanLit(False))]))]),ClassDecl(Id(Node),[AttributeDecl(Instance,VarDecl(Id(value),IntType)),AttributeDecl(Instance,VarDecl(Id(next),ClassType(Id(Node)),NullLiteral())),MethodDecl(Id(Constructor),Instance,[param(Id(value),IntType),param(Id(next),ClassType(Id(Node)))],Block([AssignStmt(FieldAccess(Self(),Id(value)),Id(value)),AssignStmt(FieldAccess(Self(),Id(next)),Id(next))]))]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(a),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[]))]))])])"
+        self.assertTrue(TestAST.test(input,expect,389))
+
+    def test_390(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                list.addFirst(1);
+                list.addFirst(2);
+                list.addFirst(3);
+                list.addFirst(4);
+                list.addFirst(5);
+                list.addFirst(6);
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),Call(Id(list),Id(addFirst),[IntLit(1)]),Call(Id(list),Id(addFirst),[IntLit(2)]),Call(Id(list),Id(addFirst),[IntLit(3)]),Call(Id(list),Id(addFirst),[IntLit(4)]),Call(Id(list),Id(addFirst),[IntLit(5)]),Call(Id(list),Id(addFirst),[IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,390))
+
+    def test_391(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                list.addLast(1);
+                list.addLast(2);
+                list.addLast(3);
+                list.addLast(4);
+                list.addLast(5);
+                list.addLast(6);
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),Call(Id(list),Id(addLast),[IntLit(1)]),Call(Id(list),Id(addLast),[IntLit(2)]),Call(Id(list),Id(addLast),[IntLit(3)]),Call(Id(list),Id(addLast),[IntLit(4)]),Call(Id(list),Id(addLast),[IntLit(5)]),Call(Id(list),Id(addLast),[IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,391))
+
+    def test_392(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                list.addFirst(1);
+                list.addFirst(2);
+                list.addFirst(3);
+                list.addFirst(4);
+                list.addFirst(5);
+                list.addFirst(6);
+                list.removeFirst();
+                list.removeLast();
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),Call(Id(list),Id(addFirst),[IntLit(1)]),Call(Id(list),Id(addFirst),[IntLit(2)]),Call(Id(list),Id(addFirst),[IntLit(3)]),Call(Id(list),Id(addFirst),[IntLit(4)]),Call(Id(list),Id(addFirst),[IntLit(5)]),Call(Id(list),Id(addFirst),[IntLit(6)]),Call(Id(list),Id(removeFirst),[]),Call(Id(list),Id(removeLast),[]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,392))
+
+    def test_393(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                list.addFirst(1);
+                list.addFirst(2);
+                list.addFirst(3);
+                list.addFirst(4);
+                list.addFirst(5);
+                list.addFirst(6);
+                Foreach (i In 0 .. list.size()) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),Call(Id(list),Id(addFirst),[IntLit(1)]),Call(Id(list),Id(addFirst),[IntLit(2)]),Call(Id(list),Id(addFirst),[IntLit(3)]),Call(Id(list),Id(addFirst),[IntLit(4)]),Call(Id(list),Id(addFirst),[IntLit(5)]),Call(Id(list),Id(addFirst),[IntLit(6)]),For(Id(i),IntLit(0),CallExpr(Id(list),Id(size),[]),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,393))
+
+    def test_394(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                Var arr: Array[Int, 6] = Array(1, 2, 3, 4, 5, 6);
+                list.addFirst(1);
+                list.addFirst(2);
+                list.addFirst(3);
+                list.addFirst(4);
+                list.addFirst(5);
+                list.addFirst(6);
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),VarDecl(Id(arr),ArrayType(6,IntType),[IntLit(1),IntLit(2),IntLit(3),IntLit(4),IntLit(5),IntLit(6)]),Call(Id(list),Id(addFirst),[IntLit(1)]),Call(Id(list),Id(addFirst),[IntLit(2)]),Call(Id(list),Id(addFirst),[IntLit(3)]),Call(Id(list),Id(addFirst),[IntLit(4)]),Call(Id(list),Id(addFirst),[IntLit(5)]),Call(Id(list),Id(addFirst),[IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,394))
+
+    def test_395(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                Var arr: Array[Int, 6] = Array(1, 2, 3, 4, 5, 6);
+                Foreach (i In 0 .. 6) {
+                    list.addLast(arr[i]);
+                }
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),VarDecl(Id(arr),ArrayType(6,IntType),[IntLit(1),IntLit(2),IntLit(3),IntLit(4),IntLit(5),IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(list),Id(addLast),[ArrayCell(Id(arr),[Id(i)])])])]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,395))
+
+    def test_396(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                Var arr: Array[Int, 6] = Array(1, 2, 3, 4, 5, 6);
+                Foreach (i In 0 .. 6) {
+                    list.addLast(arr[i] * 2);
+                }
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),VarDecl(Id(arr),ArrayType(6,IntType),[IntLit(1),IntLit(2),IntLit(3),IntLit(4),IntLit(5),IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(list),Id(addLast),[BinaryOp(*,ArrayCell(Id(arr),[Id(i)]),IntLit(2))])])]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,396))
+
+    def test_397(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                Var arr: Array[Int, 6] = Array(1, 2, 3, 4, 5, 6);
+                Foreach (i In 0 .. 6) {
+                    list.addLast(arr[i] / 2);
+                }
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),VarDecl(Id(arr),ArrayType(6,IntType),[IntLit(1),IntLit(2),IntLit(3),IntLit(4),IntLit(5),IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(list),Id(addLast),[BinaryOp(/,ArrayCell(Id(arr),[Id(i)]),IntLit(2))])])]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,397))
+
+    def test_398(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                Var arr: Array[Int, 6] = Array(1, 2, 3, 4, 5, 6);
+                Foreach (i In 0 .. 6) {
+                    list.addLast(arr[i] + 2);
+                }
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),VarDecl(Id(arr),ArrayType(6,IntType),[IntLit(1),IntLit(2),IntLit(3),IntLit(4),IntLit(5),IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(list),Id(addLast),[BinaryOp(+,ArrayCell(Id(arr),[Id(i)]),IntLit(2))])])]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,398))
+
+    def test_399(self):
+        input = """Class LinkedList {}
+        Class Node {}
+        Class Program {
+            main() {
+                Var list: LinkedList = New LinkedList();
+                Var arr: Array[Int, 6] = Array(1, 2, 3, 4, 5, 6);
+                Foreach (i In 0 .. 6) {
+                    list.addLast(arr[i] - 2);
+                }
+                Foreach (i In 0 .. 6) {
+                    Out.print(list.contains(i));
+                }
+            }
+        }"""
+        expect = "Program([ClassDecl(Id(LinkedList),[]),ClassDecl(Id(Node),[]),ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([VarDecl(Id(list),ClassType(Id(LinkedList)),NewExpr(Id(LinkedList),[])),VarDecl(Id(arr),ArrayType(6,IntType),[IntLit(1),IntLit(2),IntLit(3),IntLit(4),IntLit(5),IntLit(6)]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(list),Id(addLast),[BinaryOp(-,ArrayCell(Id(arr),[Id(i)]),IntLit(2))])])]),For(Id(i),IntLit(0),IntLit(6),IntLit(1),Block([Call(Id(Out),Id(print),[CallExpr(Id(list),Id(contains),[Id(i)])])])])]))])])"
+        self.assertTrue(TestAST.test(input,expect,399))
