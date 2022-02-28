@@ -141,9 +141,11 @@ class ASTGeneration(D96Visitor):
     # Visit a parse tree produced by D96Parser#param.
     def visitParam(self, ctx:D96Parser.ParamContext):
         idents = self.visit(ctx.ids())
+        typ = self.visit(ctx.typeDecl())
         return [VarDecl(
             name,
-            self.visit(ctx.typeDecl()),
+            typ,
+            NullLiteral() if isinstance(typ, ClassType) else None
         ) for name in idents]
 
 

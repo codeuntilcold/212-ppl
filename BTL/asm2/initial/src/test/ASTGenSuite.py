@@ -1242,103 +1242,425 @@ class ASTGenSuite(unittest.TestCase):
         ]))])]))
         self.assertTrue(TestAST.test(input,expect,356))
 
-    # def test_357(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,357))
+    def test_357(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), NullLiteral()),
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,357))
 
-    # def test_358(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,358))
+    def test_358(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect = Null, Null;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), NullLiteral()),
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,358))
 
-    # def test_359(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,359))
+    def test_359(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect = 0, 1;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), IntLiteral(0)),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), IntLiteral(1)),
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,359))
 
-    # def test_360(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,360))
+    def test_360(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect = 0b11, 0x11;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), IntLiteral(0b11)),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), IntLiteral(0x11)),
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,360))
 
-    # def test_361(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,361))
+    def test_361(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                a[0][1][2][3] = a[0][1][2][3];
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    Assign(
+                        ArrayCell(Id("a"), [IntLiteral(0), IntLiteral(1), IntLiteral(2), IntLiteral(3)]),
+                        ArrayCell(Id("a"), [IntLiteral(0), IntLiteral(1), IntLiteral(2), IntLiteral(3)])
+                    )
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,361))
 
-    # def test_362(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,362))
+    def test_362(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,362))
 
-    # def test_363(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,363))
+    def test_363(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect;
+                a = b + c + m + n;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), NullLiteral()),
+                    Assign(Id("a"), BinaryOp("+",
+                        BinaryOp("+",
+                            BinaryOp("+", Id("b"), Id("c")),
+                            Id("m")
+                        ),
+                        Id("n")
+                    ))
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,363))
 
-    # def test_364(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,364))
+    def test_364(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect;
+                Return a + b;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), NullLiteral()),
+                    Return(BinaryOp("+", Id("a"), Id("b")))
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,364))
 
-    # def test_365(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,365))
+    def test_365(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                {
 
-    # def test_366(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,366))
+                }
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    Block([])
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,365))
 
-    # def test_367(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,367))
+    def test_366(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {}
 
-    # def test_368(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,368))
+            randomTest(a, b, c: Rect) {}
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+    ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                ])),
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,366))
 
-    # def test_369(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,369))
+    def test_367(self):
+        input = """Class Program {
+            randomTest(a, b, c: Rect) {
+                aloha = aloha;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    Assign(Id("aloha"), Id("aloha"))
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,367))
 
-    # def test_370(self):
-    #     input = """"""
-    #     expect = str(Program([
-    
-    #     ]))
-    #     self.assertTrue(TestAST.test(input,expect,370))
+    def test_368(self):
+        input = """
+        Class Rect {}
+        Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Rect"), []),
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), NullLiteral()),
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,368))
+
+    def test_369(self):
+        input = """
+        Class Rect {
+            Var len, wid: Float;
+        }
+        Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Rect"), [
+                AttributeDecl(Instance(), VarDecl(Id("len"), FloatType())),
+                AttributeDecl(Instance(), VarDecl(Id("wid"), FloatType())),
+            ]),
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), NullLiteral()),
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,369))
+
+    def test_370(self):
+        input = """
+        Class Rect {
+            Var len, wid: Float;
+
+            Constructor(lhs: Rect) {
+                Self.len = lhs.len;
+                Self.wid = lhs.wid;
+            }
+        }
+        Class Program {
+            randomTest(a, b, c: Rect) {
+                Var m, n: Rect;
+            }
+            
+            main() {
+                Self.randomTest();
+            }
+        }"""
+        expect = str(Program([
+            ClassDecl(Id("Rect"), [
+                AttributeDecl(Instance(), VarDecl(Id("len"), FloatType())),
+                AttributeDecl(Instance(), VarDecl(Id("wid"), FloatType())),
+                MethodDecl(Instance(), Id("Constructor"), [VarDecl(Id("lhs"), ClassType(Id("Rect")), NullLiteral())], Block([
+                    Assign(FieldAccess(SelfLiteral(), Id("len")), FieldAccess(Id("lhs"), Id("len"))),
+                    Assign(FieldAccess(SelfLiteral(), Id("wid")), FieldAccess(Id("lhs"), Id("wid"))),
+                ]))
+            ]),
+            ClassDecl(Id("Program"), [
+                MethodDecl(Instance(), Id("randomTest"), [
+                    VarDecl(Id("a"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("b"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("c"), ClassType(Id("Rect")), NullLiteral()),
+                ], Block([
+                    VarDecl(Id("m"), ClassType(Id("Rect")), NullLiteral()),
+                    VarDecl(Id("n"), ClassType(Id("Rect")), NullLiteral()),
+                ])),
+                MethodDecl(Static(), Id("main"), [], Block([
+                    CallStmt(SelfLiteral(), Id("randomTest"), [])
+                ]))
+            ])
+        ]))
+        self.assertTrue(TestAST.test(input,expect,370))
 
     def test_371(self):
         input = """Class Program {
