@@ -358,6 +358,10 @@ class ASTGenSuite(unittest.TestCase):
             Var a: Rectangle;
             Var a: Rectangle = New Rectangle();
             Var a: Rectangle = New Rectangle(1, 2);
+
+            Val a: Rectangle;
+            Val a: Rectangle = New Rectangle();
+            Val a: Rectangle = New Rectangle(1, 2);
         }"""
         expect = str(Program([
             ClassDecl(Id("Lit"), [
@@ -370,6 +374,21 @@ class ASTGenSuite(unittest.TestCase):
                     NewExpr(Id("Rectangle"), [])
                 )),
                 AttributeDecl(Instance(), VarDecl(Id("a"), 
+                    ClassType(Id("Rectangle")), 
+                    NewExpr(Id("Rectangle"), [
+                        IntLiteral(1), 
+                        IntLiteral(2)
+                    ])
+                )),
+                AttributeDecl(Instance(), ConstDecl(Id("a"), 
+                    ClassType(Id("Rectangle")), 
+                    None
+                )),
+                AttributeDecl(Instance(), ConstDecl(Id("a"), 
+                    ClassType(Id("Rectangle")), 
+                    NewExpr(Id("Rectangle"), [])
+                )),
+                AttributeDecl(Instance(), ConstDecl(Id("a"), 
                     ClassType(Id("Rectangle")), 
                     NewExpr(Id("Rectangle"), [
                         IntLiteral(1), 
@@ -772,7 +791,7 @@ class ASTGenSuite(unittest.TestCase):
                 ConstDecl(Id("a"),IntType()),
                 ConstDecl(Id("a"),IntType(),IntLiteral(0)),
                 ConstDecl(Id("a"),StringType(),StringLiteral("Init")),
-                ConstDecl(Id("a"),ClassType(Id("Object")),NullLiteral()),
+                ConstDecl(Id("a"),ClassType(Id("Object")),None),
                 ConstDecl(Id("a"),ClassType(Id("Object")),NewExpr(Id("Object"),[]))]))])]))
         self.assertTrue(TestAST.test(input,expect,336))
 

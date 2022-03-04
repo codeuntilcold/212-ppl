@@ -51,12 +51,21 @@ class ASTGeneration(D96Visitor):
         
         if ctx.attrs():
             attrs = self.visit(ctx.attrs())
-            return [ 
-                AttributeDecl(
-                    Static() if decl[0].name[0] == '$' else Instance(), 
-                    ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
-                ) for decl in attrs
-            ]
+            if ctx.VAL():
+                return [ 
+                    AttributeDecl(
+                        Static() if decl[0].name[0] == '$' else Instance(), 
+                        # If it's a UN-INIT constant class instance, it must be none
+                        ConstDecl(decl[0], decl[1], decl[2] if not isinstance(decl[1], ClassType) else None) 
+                    ) for decl in attrs
+                ]
+            else:
+                return [ 
+                    AttributeDecl(
+                        Static() if decl[0].name[0] == '$' else Instance(), 
+                        VarDecl(decl[0], decl[1], decl[2])
+                    ) for decl in attrs
+                ]
         else:
             attrs = self.visit(ctx.attrsInit())
             n_init = len(attrs)
@@ -67,7 +76,8 @@ class ASTGeneration(D96Visitor):
                 ret += [
                     AttributeDecl(
                         Static() if attrs[i][0].name[0] == '$' else Instance(), 
-                        ConstDecl(attrs[i][0], attrs[i][1], attrs[n_init - i - 1][2]) if ctx.VAL() else VarDecl(attrs[i][0], attrs[i][1], attrs[n_init - i - 1][2])
+                        ConstDecl(attrs[i][0], attrs[i][1], attrs[n_init - i - 1][2]) 
+                            if ctx.VAL() else VarDecl(attrs[i][0], attrs[i][1], attrs[n_init - i - 1][2])
                     )
                 ]
             return ret
@@ -306,10 +316,18 @@ class ASTGeneration(D96Visitor):
     def visitVarDecl(self, ctx:D96Parser.VarDeclContext):
         if ctx.variables():
             variables = self.visit(ctx.variables())
-            return [ 
-                ConstDecl(decl[0], decl[1], decl[2]) if ctx.VAL() else VarDecl(decl[0], decl[1], decl[2])
-                for decl in variables
-            ]
+            if ctx.VAL():
+                return [
+                    # These attributes are not initialized. If attribute is of type class:
+                    #   Init = None if it is a constant
+                    ConstDecl(decl[0], decl[1], decl[2] if not isinstance(decl[1], ClassType) else None) 
+                    for decl in variables
+                ]
+            else:
+                return [
+                    VarDecl(decl[0], decl[1], decl[2])
+                    for decl in variables
+                ]
         else:
             variables = self.visit(ctx.varsInit())
             n_init = len(variables)
