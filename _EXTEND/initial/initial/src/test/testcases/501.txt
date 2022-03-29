@@ -1,0 +1,1 @@
+Program([ClassDecl(Id(Program),[MethodDecl(Id(main),Static,VoidType,[],Block([Call(Id(io),Id(putInt),[BinaryOp(+,IntLit(20),BinaryOp(+,IntLit(30),IntLit(50)))])]))])])

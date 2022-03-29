@@ -1,0 +1,8 @@
+{
+    "python.analysis.extraPaths": [
+        "./main/bkool/parser",
+        "./main/bkool/utils",
+        "./main/bkool/checker",
+        "./main/bkool/codegen",
+    ]
+}
