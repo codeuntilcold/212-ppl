@@ -4,5 +4,6 @@
         "./main/bkool/utils",
         "./main/bkool/checker",
         "./main/bkool/codegen",
+        "./main/bkool/mips_codegen",
     ]
 }

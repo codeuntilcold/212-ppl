@@ -43,6 +43,6 @@ class ASTGenSuite(unittest.TestCase):
     
     def test_3(self):
         input = """class B {}"""
-        expect = ""
+        expect = str(Program([ClassDecl(Id("B"), [])]))
         self.assertTrue(TestAST.test(input,expect,302))
    

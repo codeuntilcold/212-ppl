@@ -1,0 +1,28 @@
+index: (T1->boolean)*List[T1]->List[integer]
+floor: real->integer
+
+def foo(x,y,z): return index(y(z), x)
+def bar(x):
+    def zar(t): return t == floor(x)
+    return zar
+
+
+Hàm bar trả về con trỏ hàm zar, hàm zar:integer->boolean nên bar trả về integer->boolean
+x là tham số của hàm floor, nên x là float
+	Vậy bar:float->(integer->boolean)
+
+Hàm foo trả về lời gọi hàm index nên có kiểu trả về là List[integer].
+y(z) là tham số đầu tiên của index, nhận con trỏ hàm T1->boolean nên y: T2->(T1->boolean), z: T2
+x là tham số thứ hai của index, có kiểu là List[T1]
+	Vậy foo:List[T1]*(T2->(T1->boolean))*T2->List[Integer]
+
+
+foo(x, bar, y) nên T2:float, T1:integer
+
+Vậy: bar: float->(integer->boolean)
+     foo: List[integer]*(float->(integer->boolean))*float->List[integer]
+
+
+
+
+

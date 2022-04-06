@@ -1,0 +1,42 @@
+class StaticCheck(Visitor):
+
+    def visitBinOp(self,ctx:BinOp,o):
+        #op:str,e1:Exp,e2:Exp 
+        #op is +,-,*    /,      &&,||,      >, <, ==, or  !=
+        type1 = self.visit(ctx.e1, o)
+        type2 = self.visit(ctx.e2, o)
+        if ctx.op in ['+', '-', '*']:
+            if type1 == "Bool" or type2 == "Bool":
+                raise TypeMismatchInExpression(ctx)
+            else: 
+                return type1 if type1 == "Float" else type2
+        elif ctx.op == '/':
+            if type1 == "Bool" or type2 == "Bool":
+                raise TypeMismatchInExpression(ctx)
+            else: 
+                return "Float"
+        elif ctx.op in ["&&", "||"]:
+            if type1 == "Bool" and type2 == "Bool":
+                return "Bool"
+            else:
+                raise TypeMismatchInExpression(ctx)
+        else:
+            if type1 == type2: return "Bool"
+            else: raise TypeMismatchInExpression(ctx)
+
+    def visitUnOp(self,ctx:UnOp,o):
+        #op:str,e:Exp 
+        #op is -, !
+        typ = self.visit(ctx.e, o)
+        if ctx.op == '-' and typ == "Bool": raise TypeMismatchInExpression(ctx)
+        elif ctx.op == '!' and typ != "Bool": raise TypeMismatchInExpression(ctx)
+        return typ	
+
+    def visitIntLit(self,ctx:IntLit,o):
+        return "Int"
+
+    def visitFloatLit(self,ctx,o):
+        return "Float"
+
+    def visitBoolLit(self,ctx,o):
+        return "Bool"

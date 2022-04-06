@@ -1,0 +1,105 @@
+NOTE JUST IN CASE
+
+============
+fragment FIRST_DIGIT
+
+: [02468aAcCeE];
+
+fragment MID_DIGIT
+
+: [0-9a-fA-F];
+
+fragment LAST_DIGIT
+
+: [a-fA-F];
+
+fragment ONLY_DIGIT
+
+: [aAcCeE];
+
+SHEXA
+
+: FIRST_DIGIT MID_DIGIT* LAST_DIGIT
+
+| ONLY_DIGIT
+
+;
+==================
+anonymous_function
+
+: LAMDA function_body SEMI;
+
+function_body
+
+: param CM function_body CM expr
+
+| param CL expr DOT expr
+
+;
+
+param
+
+: ID
+
+;
+
+expr
+
+: expr1 ( ADD | SUB ) expr | expr1
+
+;
+
+expr1
+
+: expr1 ( MUL | DIV | MOD ) expr2 | expr2
+
+;
+
+expr2
+
+: operand DQUES operand | operand
+
+;
+
+operand
+
+: LP expr RP 
+
+| ID | INTLIT | FLOATLIT | STRINGLIT | arraylit
+
+;
+
+arraylit
+: LB expr (CM expr)* RB
+
+| LB RB
+
+;
+======================
+from functools import reduce
+
+class ASTGeneration(XVisitor):
+    def visitPrototype(self, ctx:XContext.PrototypeContext): # Prototype: name:str, param: Mem, rt:Type
+# ctx.param(): [[Decl], [Decl], ...]
+decllist_flatten = reduce(lambda acc, decllist: acc + self.visit(decllist), ctx.param(), [])
+decllist_rev = decllist_flatten[::-1]
+lastmem = Mem(decllist_rev[0], Nil())
+memchain = reduce(lambda acc, current: Mem(current, acc), decllist_rev[1:], lastmem)
+return Prototype(ctx.ID().getText(), memchain, self.visit(ctx.typ()))
+
+def visitParam(self, ctx:XContext.ParamContext): # return [Decl]
+idlist = self.visit(ctx.idlist())
+ptype = self.visit(ctx.typ())
+return list(map(lambda x: Decl(x[0], RefType(ptype) if x[1] else ptype), idlist))
+
+def visitIdlist(self, ctx:XContext.IdlistContext): # return [(idname, isRef)]
+return list(map(lambda x: self.visit(x), ctx.par()))
+
+def visitPar(self, ctx:XContext.ParContext): # return (idname, isRef)
+idname = ctx.ID().getText()
+return (idname, true) if ctx.REF() else (idname, false)
+
+def visitTyp(self, ctx:XContext.TypContext):
+return IntType() if ctx.INT() else FloatType()
+
+

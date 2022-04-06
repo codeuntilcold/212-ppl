@@ -1,0 +1,68 @@
+class StaticCheck(Visitor):
+
+    """
+        undeclared id/ field/ class
+        [[x], [a, foo], [m]]
+    """
+    
+    def visitProgram(self,ctx:Program,o:object):
+        # decl:List[ClassDecl]
+        o = {}
+        for decl in ctx.decl:
+            self.visit(decl, o)
+            #print(o)
+
+    def visitClassDecl(self,ctx:ClassDecl,o:object):
+        # name:str, parent:str, mem:List[Decl]
+        o[ctx.name] = []
+        scope = []
+        if ctx.parent in o:
+            o[ctx.name] += o[ctx.parent]
+            scope = [] + o[ctx.name][0]
+        for mem in ctx.mem:
+            if mem.name in scope:
+                raise RedeclaredField(mem.name) if isinstance(mem, VarDecl) else RedeclaredMethod(mem.name)
+            scope += [mem.name]
+        o[ctx.name] = [scope]
+        #print(o)
+        for mem in ctx.mem:
+            self.visit(mem, o[ctx.name])
+
+    def visitVarDecl(self,ctx:VarDecl,o:object):
+        # name:str, typ:Type
+        if isinstance(ctx.typ, ClassType) and ctx.typ.name not in o[0]:
+            raise UndeclaredClass(typ.name)
+
+    def visitFuncDecl(self,ctx:FuncDecl,o:object):
+        # name:str, param:List[VarDecl], body:Tuple(List[Decl],List[Expr])
+        scope = []
+        for p in ctx.param:
+            self.visit(p, o)    # they are vardecls
+            scope += [p.name]
+        for p in ctx.body[0]:
+            if p.name in scope:
+                raise RedeclaredField(p.name) if isinstance(p, VarDecl) else RedeclaredMethod(p.name)
+            scope += p.name
+        i = o + [scope]
+        for e in ctx.body[1]:
+            self.visit(e, i)
+            
+    def visitIntType(self,ctx:IntType,o:object):pass
+
+    def visitFloatType(self,ctx:FloatType,o:object):pass
+
+    def visitClassType(self,ctx:ClassType,o:object):pass
+        # must check if class is declared
+
+    def visitIntLit(self,ctx:IntLit,o:object):pass
+
+    def visitId(self,ctx:Id,o:object):pass
+        # name:str
+        # must check if id is declared
+
+    def visitFieldAccess(self,ctx:FieldAccess,o:object):
+        # exp:Expr, field:str
+        # must check if field is declared
+        for scope in o:
+            if ctx.field in scope: return
+        raise UndeclaredField(ctx.field)
