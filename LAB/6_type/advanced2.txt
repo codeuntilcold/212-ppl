@@ -1,0 +1,163 @@
+class StaticCheck(Visitor):
+
+    def visitProgram(self,ctx:Program,o):
+        o = [{}]
+        [self.visit(decl, o) for decl in ctx.decl]
+        [self.visit(stmt, o) for stmt in ctx.stmts]
+
+    def visitVarDecl(self,ctx:VarDecl,o):
+        # if declared in this scope
+        if ctx.name in o[0]:
+            raise Redeclared(ctx)
+        # default type is 0
+        o[0][ctx.name] = 0
+    
+    def visitBlock(self,ctx:Block,o):
+        local = [{}] + o
+        [self.visit(decl, local) for decl in ctx.decl]
+        [self.visit(stmt, local) for stmt in ctx.stmts]
+    
+    def visitAssign(self,ctx:Assign,o):
+        rhs_type = self.visit(ctx.rhs, o)
+        id_type = self.visit(ctx.lhs, o)
+        
+        if id_type == 0 and rhs_type == 0:
+            raise TypeCannotBeInferred(ctx)
+        if id_type == 0:
+            id_type = rhs_type
+            id_name = ctx.lhs.name
+            for scope in o:
+                if id_name in scope:
+                    scope[id_name] = id_type
+                    break
+        if rhs_type == 0:
+            rhs_type = id_type
+            rhs_name = ctx.rhs.name
+            for scope in o:
+                if rhs_name in scope:
+                    scope[rhs_name] = rhs_type
+                    break
+        if id_type != rhs_type:
+            raise TypeMismatchInStatement(ctx)
+        
+    def visitBinOp(self,ctx:BinOp,o):
+        # TypeMismatchInExpression
+        
+        op = ctx.op
+        ltype = self.visit(ctx.e1, o)
+        rtype = self.visit(ctx.e2, o)
+        
+        if op in ["+", "-", "*", "/"]:
+            if ltype == 0:
+                ltype = 1
+                o[0][ctx.e1.name] = ltype
+            if rtype == 0:
+                rtype = 1
+                o[0][ctx.e2.name] = rtype
+            if ltype != 1 or rtype != 1:
+                raise TypeMismatchInExpression(ctx)
+            return 1
+            
+        elif op in ["+.", "-.", "*.", "/."]:
+            if ltype == 0:
+                ltype = 2
+                o[0][ctx.e1.name] = ltype
+            if rtype == 0:
+                rtype = 2
+                o[0][ctx.e2.name] = rtype
+            if ltype != 2 or rtype != 2:
+                raise TypeMismatchInExpression(ctx)
+            return 2
+            
+        elif op in [">", "="]:
+            if ltype == 0:
+                ltype = 1
+                o[0][ctx.e1.name] = ltype
+            if rtype == 0:
+                rtype = 1
+                o[0][ctx.e2.name] = rtype
+            if ltype != 1 or rtype != 1:
+                raise TypeMismatchInExpression(ctx)
+            return 3
+            
+        elif op in [">.", "=."]:
+            if ltype == 0:
+                ltype = 2
+                o[0][ctx.e1.name] = ltype
+            if rtype == 0:
+                rtype = 2
+                o[0][ctx.e2.name] = rtype
+            if ltype != 2 or rtype != 2:
+                raise TypeMismatchInExpression(ctx)
+            return 3
+            
+        elif op in ["&&", "||", ">b", "=b"]:
+            if ltype == 0:
+                ltype = 3
+                o[0][ctx.e1.name] = ltype
+            if rtype == 0:
+                rtype = 3
+                o[0][ctx.e2.name] = rtype
+            if ltype != 3 or rtype != 3:
+                raise TypeMismatchInExpression(ctx)
+            return 3
+
+    def visitUnOp(self,ctx:UnOp,o):
+        op = ctx.op
+        typ = self.visit(ctx.e, o)
+        
+        if op == "-":
+            if typ == 0:
+                typ = 1
+                o[0][ctx.e.name] = typ
+            if typ != 1:
+                raise TypeMismatchInExpression(ctx)
+            return 1
+            
+        elif op == "-.":
+            if typ == 0:
+                typ = 2
+                o[0][ctx.e.name] = typ
+            if typ != 2:
+                raise TypeMismatchInExpression(ctx)
+            return 2
+            
+        elif op == "!":
+            if typ == 0:
+                typ = 3
+                o[0][ctx.e.name] = typ
+            if typ != 3:
+                raise TypeMismatchInExpression(ctx)
+            return 3
+            
+        elif op == "i2f":
+            if typ == 0:
+                typ = 1
+                o[0][ctx.e.name] = typ
+            if typ != 1:
+                raise TypeMismatchInExpression(ctx)
+            return 2
+            
+        elif op == "floor":
+            if typ == 0:
+                typ = 2
+                o[0][ctx.e.name] = typ
+            if typ != 2:
+                raise TypeMismatchInExpression(ctx)
+            return 1
+
+    def visitIntLit(self,ctx:IntLit,o):
+        return 1
+
+    def visitFloatLit(self,ctx,o):
+        return 2
+
+    def visitBoolLit(self,ctx,o):
+        return 3
+
+    def visitId(self,ctx,o):
+        for scope in o:
+            if ctx.name in scope:
+                # return type of most recent identifier
+                return scope[ctx.name]
+        raise UndeclaredIdentifier(ctx.name)
