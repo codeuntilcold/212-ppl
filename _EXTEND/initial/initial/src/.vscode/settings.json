@@ -4,5 +4,10 @@
         "./main/bkool/utils",
         "./main/bkool/checker",
         "./main/bkool/codegen",
+<<<<<<< Updated upstream
+=======
+        "./main/bkool/mips_codegen",
+        "./main/bkool/astgen"
+>>>>>>> Stashed changes
     ]
 }

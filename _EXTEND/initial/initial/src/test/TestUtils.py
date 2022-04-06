@@ -12,9 +12,11 @@ from ASTGeneration import ASTGeneration
 from StaticCheck import StaticChecker
 from StaticError import *
 from CodeGenerator import CodeGenerator
+from main.bkool.mips_codegen.MIPSCodeGenerator import MIPSCodeGenerator
 import subprocess
 
 JASMIN_JAR = "./external/jasmin.jar"
+MARS_JAR = "./external/Mars4_5.jar"
 TEST_DIR = "./test/testcases/"
 SOL_DIR = "./test/solutions/"
 Lexer = BKOOLLexer
@@ -193,4 +195,47 @@ class TestCodeGen():
         finally:
             f.close()
             
-            
+class TestMIPSCodeGen:
+    @staticmethod
+    def test(input, expect, num):
+        if type(input) is str:
+            inputfile = TestUtil.makeSource(input,num)
+            lexer = Lexer(inputfile)
+            tokens = CommonTokenStream(lexer)
+            parser = Parser(tokens)
+            tree = parser.program()
+            asttree = ASTGeneration().visit(tree)
+        else:
+            inputfile = TestUtil.makeSource(str(input),num)
+            asttree = input
+        
+        ### Generate solutions/*.txt
+        TestMIPSCodeGen.check(SOL_DIR,asttree,num)
+        
+        ### Open solutions/*.txt to check
+        dest = open(os.path.join(SOL_DIR, str(num) + ".txt"),"r")
+        line = dest.read()
+        return line == expect
+
+    @staticmethod
+    def check(soldir,asttree,num):
+        codeGen = MIPSCodeGenerator()
+        path = os.path.join(soldir, str(num))
+        if not os.path.isdir(path):
+            os.mkdir(path)
+        f = open(os.path.join(soldir, str(num) + ".txt"),"w")
+        try:
+        
+            codeGen.gen(asttree, path)
+
+            subprocess.run("java -jar " + MARS_JAR + " " + path + "/BKOOLClass.asm", shell=True, stdout=f, timeout=10)
+                            #java -jar ./external/Mars4_5.jar ./test/solutions/500/BKOOLClass.asm
+
+        except StaticError as e:
+            f.write(str(e))
+        except subprocess.TimeoutExpired:
+            f.write("Time out\n")
+        except subprocess.CalledProcessError as e:
+            raise RuntimeError("command '{}' return with error (code {}): {}".format(e.cmd, e.returncode, e.output))
+        finally:
+            f.close()

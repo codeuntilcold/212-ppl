@@ -1,5 +1,6 @@
 import unittest
-from TestUtils import TestCodeGen
+# from TestUtils import TestCodeGen
+from TestUtils import TestMIPSCodeGen as TestCodeGen
 from AST import *
 
 
