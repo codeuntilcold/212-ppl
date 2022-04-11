@@ -67,7 +67,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             }
         }"""
         expect = "20"
-        self.assertTrue(TestCodeGen.test(input,expect,502))
+        self.assertTrue(TestCodeGen.test(input,expect,503))
 
     def test_code_add_int(self):
         input = """class Program {
@@ -76,7 +76,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             }
         }"""
         expect = "35"
-        self.assertTrue(TestCodeGen.test(input,expect,503))
+        self.assertTrue(TestCodeGen.test(input,expect,504))
 
     def test_code_add_float(self):
         input = """class Program {
@@ -85,4 +85,4 @@ class CheckCodeGenSuite(unittest.TestCase):
             }
         }"""
         expect = "100.0"
-        self.assertTrue(TestCodeGen.test(input,expect,504))
+        self.assertTrue(TestCodeGen.test(input,expect,505))

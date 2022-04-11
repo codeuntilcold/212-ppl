@@ -215,7 +215,7 @@ class TestMIPSCodeGen:
         ### Open solutions/*.txt to check
         dest = open(os.path.join(SOL_DIR, str(num) + ".txt"),"r")
         line = dest.read()
-        return line == expect
+        return line.__contains__(expect)
 
     @staticmethod
     def check(soldir,asttree,num):
