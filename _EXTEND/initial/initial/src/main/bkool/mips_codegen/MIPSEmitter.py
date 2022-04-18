@@ -1,3 +1,4 @@
+import struct
 from .MIPSMachineCode import MIPSCode
 
 ZERO    = '$zero'
@@ -37,11 +38,18 @@ SP      = '$sp'
 FP      = '$fp'
 RA      = '$ra'
 
+F1      = '$f1'
+F12     = '$f12'
+
 class MIPSEmitter:
     def __init__(self, filename):
         self.filename = filename
         self.buff = list()
         self.mars = MIPSCode()
+
+    @staticmethod
+    def __float_to_hex__(f):
+        return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
     def emitMOCKPROGRAM(self):
         result = list()
@@ -54,12 +62,35 @@ class MIPSEmitter:
         return self.mars.emitADDI(A0, A0, in_)
 
     def emitADDFLOAT(self, in_):
-        return self.mars.emitADDI(A0, A0, in_)
+        result = list()
+        hex_repr = MIPSEmitter.__float_to_hex__(float(in_))
+        result.append(self.mars.emitLI(T1, hex_repr))
+        result.append(self.mars.emitMTC1(T1, F1))
+        result.append(self.mars.emitADDS(F12, F12, F1))
+        return ''.join(result)
+
+    def emitMERGEFLOATINT(self):
+        result = list()
+        result.append(self.mars.emitMTC1(A0, F1))
+        result.append(self.mars.emitCVTSW(F1, F1))
+        result.append(self.mars.emitADDS(F12, F12, F1))
+        return ''.join(result)
 
     def emitPRINTINT(self):
         result = list()
         result.append(self.mars.emitLI(V0, 1))
         result.append(self.mars.emitSYSCALL())
+        return ''.join(result)
+
+    def emitPRINTFLOAT(self):
+        result = list()
+        result.append(self.mars.emitLI(V0, 2))
+        result.append(self.mars.emitSYSCALL())
+        return ''.join(result)
+
+    def emitPROLOG(self):
+        result = list()
+        result.append(self.mars.emitTEXT())
         return ''.join(result)
 
     def emitEPILOG(self):

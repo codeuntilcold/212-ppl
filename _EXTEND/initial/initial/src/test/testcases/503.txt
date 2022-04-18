@@ -1,5 +1,5 @@
 class Program {
             void main() {
-                io.putInt(15 + 20);
+                io.putInt(20);
             }
         }

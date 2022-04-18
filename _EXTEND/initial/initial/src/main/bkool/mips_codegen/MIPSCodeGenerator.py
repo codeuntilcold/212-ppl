@@ -91,6 +91,8 @@ class MIPSCodeGenVisitor:
 
 
     def visitProgram(self, ast: Program, c):
+        self.emit.printout(self.emit.emitPROLOG())
+
         for x in ast.decl:
             self.visit(x, c)
         
@@ -107,8 +109,9 @@ class MIPSCodeGenVisitor:
 
     def visitCallStmt(self, ast: CallStmt, o):
         for x in ast.param:
-            self.visit(x, o)
-        self.emit.printout(self.emit.emitPRINTINT())
+            is_float = type(self.visit(x, o)) == FloatType
+    
+        self.emit.printout(self.emit.emitPRINTFLOAT() if is_float else self.emit.emitPRINTINT())
         
     def visitBinaryOp(self, ast: BinaryOp, o):
         op = ast.op
@@ -117,20 +120,19 @@ class MIPSCodeGenVisitor:
             ltype = self.visit(ast.left, o)
             rtype = self.visit(ast.right, o)
 
-            # mtype = ltype
-            # if type(ltype) is not type(rtype):
-            #     mtype = FloatType()
-                # if type(ltype) is IntType: lcode = lcode + self.emit.emitI2F()
-                # else: rcode = rcode + self.emit.emitI2F()
-
-            # return lcode + rcode
+            if type(ltype) == FloatType or type(rtype) == FloatType:
+                if type(ltype) != type(rtype):
+                    self.emit.printout(self.emit.emitMERGEFLOATINT())
+                return FloatType()
+            else:
+                return IntType()
 
 
     def visitIntLiteral(self, ast: IntLiteral, o):
-        self.emit.printout(self.emit.emitADDNUM(ast.value))
+        self.emit.printout(self.emit.emitADDINT(ast.value))
         return IntType()
 
 
     def visitFloatLiteral(self, ast: FloatLiteral, o):
-        self.emit.printout(self.emit.emitADDNUM(str(ast.value)))
+        self.emit.printout(self.emit.emitADDFLOAT(str(ast.value)))
         return FloatType()

@@ -1,1 +1,0 @@
-Program([ClassDecl(Id(Program),[MethodDecl(Id(main),Instance,VoidType,[],Block([Call(Id(io),Id(putInt),[IntLit(20)])]))])])
