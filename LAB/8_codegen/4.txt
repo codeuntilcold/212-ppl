@@ -1,0 +1,29 @@
+    def visitBinExpr(self, ast, o):
+        op = ast.op
+        code1, type1 = self.visit(ast.e1, o)
+        code2, type2 = self.visit(ast.e2, o)
+        frame = o.frame
+        
+        code_exp = ""
+        rettype = IntType()
+        optype = IntType() if type(type1) == IntType and type(type2) == IntType else FloatType()
+        
+        if type(optype) == FloatType or op in "/":
+            if type(type1) == IntType: code1 += self.emit.emitI2F(frame)
+            if type(type2) == IntType: code2 += self.emit.emitI2F(frame)
+        
+        if op in "+-":
+            code_exp = self.emit.emitADDOP(op, optype, frame)
+            rettype = optype
+        elif op in "*":
+            code_exp = self.emit.emitMULOP(op, optype, frame)
+            rettype = optype
+        elif op in "/":
+            code_exp = self.emit.emitMULOP(op, FloatType(), frame)
+            rettype = FloatType()
+        elif op in ['>','<','>=','<=','!=','==']:
+            code_exp = self.emit.emitREOP(op, optype, frame)
+            rettype = BoolType()
+            
+        return code1 + code2 + code_exp, rettype
+    

@@ -1,0 +1,106 @@
+class StaticCheck(Visitor):
+
+    def visitProgram(self,ctx:Program,o):
+        o = [{}]
+        [self.visit(decl, o) for decl in ctx.decl]
+        [self.visit(stmt, o) for stmt in ctx.stmts]
+
+    def visitVarDecl(self,ctx:VarDecl,o):
+        # if declared in this scope
+        if ctx.name in o[0]:
+            raise Redeclared(ctx)
+        # default type is 0
+        o[0][ctx.name] = 0
+
+    def visitFuncDecl(self,ctx:FuncDecl,o):
+        #name:str,param:List[VarDecl],local:List[Decl],stmts:List[Stmt]
+        if ctx.name in o[0]:
+            raise Redeclared(ctx)
+        
+        local_scope = [{}] + o
+        [self.visit(param, local_scope) for param in ctx.param]
+
+        local_var_scope = [] + local_scope
+        [self.visit(var, local_var_scope) for var in ctx.local]
+        [self.visit(stmt, local_var_scope) for stmt in ctx.stmts]
+
+        # Copy lại kiểu đã được suy diễn ra sau khi visit thân hàm
+        for var_name, var_type in local_var_scope[0].items():
+            if var_name in local_scope[0]:
+                local_scope[0][var_name] = var_type
+        
+        o[0][ctx.name] = list(local_scope[0].values())
+        
+
+    def visitCallStmt(self,ctx:CallStmt,o):
+        #name:str,args:List[Exp]
+        func_name = ctx.name
+        func_exist = False
+        arg_types = [self.visit(arg, o) for arg in ctx.args]
+        
+        for scope in o:
+            if func_name in scope and isinstance(scope[func_name], list):
+                func_exist = True
+                
+                if len(arg_types) != len(scope[func_name]):
+                    raise TypeMismatchInStatement(ctx)
+                
+                for i in range(len(arg_types)):
+                    if arg_types[i] == 0 and scope[func_name][i] == 0:
+                        raise TypeCannotBeInferred(ctx)
+                    if arg_types[i] == 0:
+                        arg_types[i] = scope[func_name][i]
+                        id_name = ctx.args[i].name
+                        for s in o:
+                            if id_name in s:
+                                s[id_name] = arg_types[i]
+                                break
+                    if scope[func_name][i] == 0:
+                        scope[func_name][i] = arg_types[i]
+                        
+                if not arg_types == scope[func_name]:
+                    raise TypeMismatchInStatement(ctx)
+        
+        if not func_exist: raise UndeclaredIdentifier(func_name)       
+                
+
+    def visitAssign(self,ctx:Assign,o):
+        rhs_type = self.visit(ctx.rhs, o)
+        id_type = self.visit(ctx.lhs, o)
+        
+        if id_type == 0 and rhs_type == 0:
+            raise TypeCannotBeInferred(ctx)
+        if id_type == 0:
+            id_type = rhs_type
+            id_name = ctx.lhs.name
+            # most recent id will be this type
+            for scope in o:
+                if id_name in scope:
+                    scope[id_name] = id_type
+                    break
+        if rhs_type == 0:
+            rhs_type = id_type
+            rhs_name = ctx.rhs.name
+            # most recent id will be this type
+            for scope in o:
+                if rhs_name in scope:
+                    scope[rhs_name] = rhs_type
+                    break
+        if id_type != rhs_type:
+            raise TypeMismatchInStatement(ctx)
+
+    def visitIntLit(self,ctx:IntLit,o):
+        return 1
+
+    def visitFloatLit(self,ctx,o):
+        return 2
+
+    def visitBoolLit(self,ctx,o):
+        return 3
+
+    def visitId(self,ctx,o):
+        for scope in o:
+            if ctx.name in scope:
+                # return type of most recent identifier
+                return scope[ctx.name]
+        raise UndeclaredIdentifier(ctx.name)

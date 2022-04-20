@@ -1,0 +1,20 @@
+aload_3
+iload_2
+iaload
+iconst_4
+iadd
+istore_2
+========
+
+aload_3
+iload_2
+iconst_1
+iadd
+iload_2
+iconst_2
+imul
+bipush 7
+iadd
+iastore
+
+

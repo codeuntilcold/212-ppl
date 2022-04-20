@@ -1,0 +1,13 @@
+    def visitId(self, ast, o):
+        name = ast.name
+        frame = o.frame
+        sym = o.sym # [Symbol], where Symbol: name, mtype, value
+        # Value: Index(value:int), CName(value:str)
+        
+        for s in sym:
+            if s.name == name:
+                if isinstance(s.value, Index):
+                    return self.emit.emitREADVAR(name, s.mtype, int(s.value.value), frame), s.mtype
+                else:
+                    vname = s.value.value + "." + s.name
+                    return self.emit.emitGETSTATIC(vname, s.mtype, frame), s.mtype
