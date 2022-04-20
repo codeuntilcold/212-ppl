@@ -9,7 +9,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_ast(self):
         input = Program([
             ClassDecl(Id("Program"), [
-                MethodDecl(Static(), Id("main"),[],VoidType(),Block([
+                MethodDecl(Static(), Id("main"),[],Block([
                     CallStmt(Id("io"), Id("putInt"),[
                         BinaryOp("+", 
                             IntLiteral(20),
@@ -25,7 +25,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_ast_add_int(self):
         input = Program([
             ClassDecl(Id("Program"), [
-                MethodDecl(Static(), Id("main"),[],VoidType(),Block([
+                MethodDecl(Static(), Id("main"),[],Block([
                     CallStmt(Id("io"), Id("putInt"),[
                         BinaryOp("+", 
                             IntLiteral(20),
@@ -44,7 +44,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_ast_add_float(self):
         input = Program([
             ClassDecl(Id("Program"), [
-                MethodDecl(Static(), Id("main"),[],VoidType(),Block([
+                MethodDecl(Static(), Id("main"),[],Block([
                     CallStmt(Id("io"), Id("putFloat"),[
                         BinaryOp("+",
                             IntLiteral(10),    
@@ -61,8 +61,8 @@ class CheckCodeGenSuite(unittest.TestCase):
         self.assertTrue(TestCodeGen.test(input,expect,502))
 
     def test_code(self):
-        input = """class Program {
-            void main() {
+        input = """Class Program {
+            main() {
                 io.putInt(20);
             }
         }"""
@@ -70,8 +70,8 @@ class CheckCodeGenSuite(unittest.TestCase):
         self.assertTrue(TestCodeGen.test(input,expect,503))
 
     def test_code_add_int(self):
-        input = """class Program {
-            void main() {
+        input = """Class Program {
+            main() {
                 io.putInt(15 + 20);
             }
         }"""
@@ -79,8 +79,8 @@ class CheckCodeGenSuite(unittest.TestCase):
         self.assertTrue(TestCodeGen.test(input,expect,504))
 
     def test_code_add_float(self):
-        input = """class Program {
-            void main() {
+        input = """Class Program {
+            main() {
                 io.putFloat(20.5 + 79.5);
             }
         }"""

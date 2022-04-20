@@ -1,1 +1,1 @@
-Program([ClassDecl(Id(Program),[MethodDecl(Id(main),Static,VoidType,[],Block([Call(Id(io),Id(putFloat),[BinaryOp(+,IntLit(10),BinaryOp(+,FloatLit(20.5),FloatLit(29.5)))])]))])])
+Program([ClassDecl(Id(Program),[MethodDecl(Id(main),Static,[],Block([Call(Id(io),Id(putFloat),[BinaryOp(+,IntLit(10),BinaryOp(+,FloatLit(20.5),FloatLit(29.5)))])]))])])

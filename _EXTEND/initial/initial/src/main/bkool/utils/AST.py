@@ -250,11 +250,10 @@ class VarDecl(StoreDecl):
 
 @dataclass
 class Block(Stmt):
-
-    stmt: List[Inst]
+    inst: List[Inst]
 
     def __str__(self):
-        return "Block([" + ','.join(str(i) for i in self.stmt) + "])"
+        return "Block([" + ','.join(str(i) for i in self.inst) + "])"
 
 
 # used for local constant declaration
@@ -306,11 +305,10 @@ class MethodDecl(MemDecl):
     kind: SIKind
     name: Id
     param: List[VarDecl]
-    returnType: Type
     body: Block
 
     def __str__(self):
-        return "MethodDecl(" + str(self.name) + ',' + str(self.kind) + ',' + str(self.returnType) + ",[" + ','.join(i.toParam() for i in self.param) + "]," + str(self.body) + ")"
+        return "MethodDecl(" + str(self.name) + ',' + str(self.kind) + ",[" + ','.join(i.toParam() for i in self.param) + "]," + str(self.body) + ")"
 # used for mutable (variable) or immutable (constant) declaration
 
 

@@ -103,7 +103,7 @@ class MIPSCodeGenVisitor:
             self.visit(x, o)
 
     def visitMethodDecl(self, ast: MethodDecl, o):
-        for x in ast.body.stmt:
+        for x in ast.body.inst:
             self.visit(x, o)
     
 

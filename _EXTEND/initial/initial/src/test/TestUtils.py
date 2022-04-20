@@ -5,8 +5,8 @@ if not './main/bkool/parser/' in sys.path:
     sys.path.append('./main/bkool/parser/')
 if os.path.isdir('../target/main/bkool/parser') and not '../target/main/bkool/parser/' in sys.path:
     sys.path.append('../target/main/bkool/parser/')
-from BKOOLLexer import BKOOLLexer
-from BKOOLParser import BKOOLParser
+from D96Lexer import D96Lexer
+from D96Parser import D96Parser
 from lexererr import *
 from ASTGeneration import ASTGeneration
 from StaticCheck import StaticChecker
@@ -19,8 +19,8 @@ JASMIN_JAR = "./external/jasmin.jar"
 MARS_JAR = "./external/Mars4_5.jar"
 TEST_DIR = "./test/testcases/"
 SOL_DIR = "./test/solutions/"
-Lexer = BKOOLLexer
-Parser = BKOOLParser
+Lexer = D96Lexer
+Parser = D96Parser
 
 class TestUtil:
     @staticmethod
@@ -56,7 +56,7 @@ class TestLexer:
     def printLexeme(dest,lexer):
         tok = lexer.nextToken()
         if tok.type != Token.EOF:
-            dest.write(tok.text+";"+str(tok.type)+",")
+            dest.write(tok.text+",")
             TestLexer.printLexeme(dest,lexer)
         else:
             dest.write("<EOF>")
