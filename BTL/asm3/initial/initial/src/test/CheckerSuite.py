@@ -175,14 +175,21 @@ class CheckerSuite(unittest.TestCase):
     def test_419(self):
         input = """Class Program {
             main() {
-                Var a: Int = io.nonexistent_attr;
+                Var a: Int = io.nonexistent_attr.really;
             }
         }"""
         expect = "Undeclared Attribute: nonexistent_attr"
         self.assertTrue(TestChecker.test(input,expect,419))
 
     # def test_420(self):
-    #     input = """"""
+    #     input = """Class Test {
+    #         Var $attri: Int;
+    #     }
+    #     Class Program() {
+    #         main() {
+    #             Var a: Int = Test::$attri.really;
+    #         }
+    #     }"""
     #     expect = ""
     #     self.assertTrue(TestChecker.test(input,expect,420))
 
