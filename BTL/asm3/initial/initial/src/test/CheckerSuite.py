@@ -18,7 +18,7 @@ class CheckerSuite(unittest.TestCase):
                 io.putIntLn();
             }
         }"""
-        expect = "Type Mismatch In Statement: CallStmt(Id(io),Id(putIntLn),List())"
+        expect = "Type Mismatch In Statement: Call(Id(io),Id(putIntLn),[])"
         self.assertTrue(TestChecker.test(input,expect,401))
     
     def test_diff_numofparam_expr(self):
@@ -181,72 +181,144 @@ class CheckerSuite(unittest.TestCase):
         expect = "Undeclared Attribute: nonexistent_attr"
         self.assertTrue(TestChecker.test(input,expect,419))
 
-    # def test_420(self):
-    #     input = """Class Test {
-    #         Var $attri: Int;
-    #     }
-    #     Class Program() {
-    #         main() {
-    #             Var a: Int = Test::$attri.really;
-    #         }
-    #     }"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,420))
+    def test_420(self):
+        input = """Class Test {
+            Var $attri: Int;
+        }
+        Class Program {
+            main() {
+                Var a: Int = Test::$attri;
+            }
+        }"""
+        expect = "Type Mismatch In Statement: VarDecl(Id(a),IntType,FieldAccess(FieldAccess(Id(Test),Id($attri)),Id(really)))"
+        self.assertTrue(TestChecker.test(input,expect,420))
 
-    # def test_421(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,421))
+    def test_421(self):
+        input = """Class Program {
+            main() {
+                Val a: Int;
+                Val b: Int = 0;
+                a = b;
+            }
+        }"""
+        expect = "Cannot Assign To Constant: AssignStmt(Id(a),Id(b))"
+        self.assertTrue(TestChecker.test(input,expect,421))
 
-    # def test_422(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,422))
+    def test_422(self):
+        input = """Class Program {
+            Val $constant: Int;
 
-    # def test_423(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,423))
+            main() {
+                Program::$constant = 10;
+            }
+        }"""
+        expect = "Cannot Assign To Constant: AssignStmt(FieldAccess(Id(Program),Id($constant)),IntLit(10))"
+        self.assertTrue(TestChecker.test(input,expect,422))
 
-    # def test_424(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,424))
+    def test_423(self):
+        input = """Class Program {
+            main() {
+                Val idx: Int;
+                Foreach(idx In 1 .. 10) {
+                    ## Do something ##
+                }
+            }
+        }"""
+        expect = ""
+        self.assertTrue(TestChecker.test(input,expect,423))
 
-    # def test_425(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,425))
+    def test_424(self):
+        input = """Class Program {
+            main() {
+                Val idx: Int = 1.2;
+            }
+        }"""
+        expect = "Type Mismatch In Constant Declaration: ConstDecl(Id(idx),IntType,FloatLit(1.2))"
+        self.assertTrue(TestChecker.test(input,expect,424))
 
-    # def test_426(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,426))
+    def test_425(self):
+        input = """Class Program {
+            main() {
+                Val idx: Boolean = 1;
+            }
+        }"""
+        expect = "Type Mismatch In Constant Declaration: ConstDecl(Id(idx),BoolType,IntLit(1))"
+        self.assertTrue(TestChecker.test(input,expect,425))
 
-    # def test_427(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,427))
+    def test_426(self):
+        input = """Class A {}
+        Class B {}
+        Class Program {
+            main() {
+                Val a: A = New A();
+                Val b: A = New B();
+                Val c: B = New B();
+                Val d: B = New A();
+            }
+        }"""
+        expect = "Type Mismatch In Constant Declaration: ConstDecl(Id(d),ClassType(Id(B)),NewExpr(Id(A),[]))"
+        self.assertTrue(TestChecker.test(input,expect,426))
 
-    # def test_428(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,428))
+    def test_427(self):
+        input = """Class Program {
+            main() {
+                Val idx: Int = True;
+            }
+        }"""
+        expect = "Type Mismatch In Constant Declaration: ConstDecl(Id(idx),IntType,BooleanLit(True))"
+        self.assertTrue(TestChecker.test(input,expect,427))
 
-    # def test_429(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,429))
+    def test_428(self):
+        input = """Class Program {
+            main() {
+                Break;
+                Foreach(idx In 1 .. 10) {
+                    Continue;
+                }
+            }
+        }"""
+        expect = "Break Not In Loop"
+        self.assertTrue(TestChecker.test(input,expect,428))
 
-    # def test_430(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,430))
+    def test_429(self):
+        input = """Class Program {
+            main() {
+                Continue;
+                Foreach(idx In 1 .. 10) {
+                    Break;
+                }
+            }
+        }"""
+        expect = "Continue Not In Loop"
+        self.assertTrue(TestChecker.test(input,expect,429))
 
-    # def test_431(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,431))
+    def test_430(self):
+        input = """Class Program {
+            main() {
+                Foreach(idx In 1 .. 10) {
+                    Foreach(aidx In 1 .. 10) {
+                        Continue;
+                    }
+                }
+                Break;
+            }
+        }"""
+        expect = "Break Not In Loop"
+        self.assertTrue(TestChecker.test(input,expect,430))
+
+    def test_431(self):
+        input = """Class Program {
+            main() {
+                If (True) {
+                    Break;
+                }
+                Foreach(idx In 1 .. 10) {
+                    Continue;
+                }
+            }
+        }"""
+        expect = "Break Not In Loop"
+        self.assertTrue(TestChecker.test(input,expect,431))
 
     # def test_432(self):
     #     input = """"""

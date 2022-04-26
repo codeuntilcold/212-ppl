@@ -30,8 +30,8 @@ class StaticChecker(BaseVisitor,Utils):
 
     libname = "io"
     global_envi = [
-        Symbol("getInt", MType([], IntType())),
-        Symbol("putIntLn", MType([IntType()], VoidType()))
+        MemSymbol(False, Symbol("getInt", MType([], IntType()))),
+        MemSymbol(False, Symbol("putIntLn", MType([IntType()], VoidType())))
     ]
 
     def __init__(self, ast):
@@ -41,6 +41,18 @@ class StaticChecker(BaseVisitor,Utils):
         return self.visit(self.ast, StaticChecker.global_envi)
 
 
+    """
+            HELPERS
+    """
+    @staticmethod
+    def check_undeclared_class(classtype, stack):
+        if isinstance(classtype, ClassType) and not classtype.classname.name in stack[-1]:
+            raise Undeclared(Class(), classtype.classname.name)
+        return classtype
+
+    """
+            VISITORS
+    """
     def visitProgram(self, ast: Program, c):
         # Check for Undeclared/Redeclared first
         env = { StaticChecker.libname: StaticChecker.global_envi }
@@ -71,8 +83,8 @@ class StaticChecker(BaseVisitor,Utils):
         # Holds an array of Symbols
         c[cname] = []
         # Pass the global class env and also name of current class for members
-        return [self.visit(mem, (c, cname)) for mem in ast.memlist]
-    
+        [self.visit(mem, (c, cname)) for mem in ast.memlist]
+
 
     def visitAttributeDecl(self, ast: AttributeDecl, classes):
         cname = classes[1]
@@ -83,7 +95,9 @@ class StaticChecker(BaseVisitor,Utils):
             raise Redeclared(Attribute(), attr_name)
 
         is_static = isinstance(ast.kind, Static)
-        typ = decl.constType if is_const else decl.varType, classes
+        typ = decl.constType if is_const else decl.varType
+        StaticChecker.check_undeclared_class(typ, classes[0])
+
         classes[0][cname].append(MemSymbol(is_static, Symbol(attr_name, typ)))
     
 
@@ -91,25 +105,30 @@ class StaticChecker(BaseVisitor,Utils):
         cname = classes[1]
         method_name = ast.name.name
         if len(classes[0][cname]) > 0 and self.lookup(method_name, classes[0][cname], lambda sym: sym.sym.name):
-            raise Redeclared(Method(), method_name)
+            raise Redeclared(Method(), method_name) if method_name not in ['Constructor, Destructor'] else \
+                Redeclared(SpecialMethod(), method_name)
         
-        env = [[Symbol(p.variable.name, p.varType) for p in ast.param]] + [classes[0]]
-        for i in range(len(env[0]) - 1):
-            cur = env[0][i]
-            rest = env[0][i+1:]
+        stack = [[Symbol(p.variable.name, p.varType) for p in ast.param]] + [classes[0]]
+        for i in range(len(stack[0]) - 1):
+            cur = stack[0][i]
+            rest = stack[0][i+1:]
+            StaticChecker.check_undeclared_class(cur.mtype, stack) 
             if self.lookup(cur.name, rest, lambda sym: sym.name):
                 raise Redeclared(Parameter(), cur.name)
             
         partype = [p.varType for p in ast.param]
-        rettype = self.visit(ast.body, env)
+        rettype = self.visit(ast.body, stack)
 
         is_static = isinstance(ast.kind, Static)
-        classes[0][cname].append(MemSymbol(is_static, Symbol(method_name, MType(partype, rettype))))
+        classes[0][cname].append(MemSymbol(
+            is_static, 
+            Symbol(method_name, MType(partype, rettype))
+        ))
 
 
     def visitBlock(self, ast: Block, stack):
         rettype = VoidType()
-        for stmt in ast.inst:
+        for stmt in ast.inst:    
             self.visit(stmt, stack)
             if isinstance(stmt, Return):
                 rettype = self.visit(stmt, stack)
@@ -120,13 +139,10 @@ class StaticChecker(BaseVisitor,Utils):
         varname = ast.variable.name
         if self.lookup(varname, stack[0], lambda sym: sym.name):
             raise Redeclared(Variable(), varname)
+        StaticChecker.check_undeclared_class(ast.varType, stack)
 
-        if isinstance(ast.varType, ClassType):
-            if not self.lookup(ast.varType.classname.name, stack[-1], lambda x: x):
-                raise Undeclared(Class(), ast.varType.classname.name)
-
-        if ast.varInit:
-            self.visit(ast.varInit, stack)
+        if ast.varInit and type(ast.varType) != type(self.visit(ast.varInit, stack)):
+            raise TypeMismatchInStatement(ast)
 
         stack[0].append(Symbol(varname, ast.varType, False))
 
@@ -135,122 +151,184 @@ class StaticChecker(BaseVisitor,Utils):
         constname = ast.constant.name
         if self.lookup(constname, stack[0], lambda sym: sym.name):
             raise Redeclared(Constant(), constname)
-        stack[0].append(Symbol(constname, ast.varType, False))
+        StaticChecker.check_undeclared_class(ast.constType, stack)
 
-        # TODO: Check static evaluation
-        def check_static_eval(expr):
-            pass
+        if ast.value:
+            if type(ast.constType) != type(self.visit(ast.value, stack)):
+                raise TypeMismatchInConstant(ast)
+            
+            # TODO: Check static evaluation
+            def cannot_be_evaluated_statically(expr):
+                if isinstance(expr, Literal):
+                    return False
+                else:
+                    return False
+            if cannot_be_evaluated_statically(ast.value):
+                raise IllegalConstantExpression(ast.value)
 
-        check_static_eval(ast.value)
-
-        # if ast.constType == self.visit(ast.value, c):
-        #     return Symbol(ast.constant.name, ast.constType, self.visit(ast.value, c))
-        # else:
-        #     raise TypeMismatchInStatement(ast)
-
-        return Symbol(ast.constant.name, ast.constType)
+        stack[0].append(Symbol(constname, ast.constType, True))
 
 
     def visitAssign(self, ast: Assign, c):
-        self.visit(ast.lhs, c)
-        self.visit(ast.exp, c)
-        return None
-
-
-    def visitCallStmt(self, ast: CallStmt, c):
-        method_name = ast.method.name
-        
-        if ast.obj.name == "io" and self.lookup(method_name, StaticChecker.global_envi, lambda sym: sym.name):
-            pass
-        else:
-            raise Undeclared(Method(), method_name)
-        
-        #ast.param
-
-        return None
-
+        # TODO: Should return a Symbol to check for constant?
+        typ1, is_constant = self.visit(ast.lhs, c)
+        if is_constant:
+            raise CannotAssignToConstant(ast)
     
+        typ2 = self.visit(ast.exp, c)
+        if isinstance(typ2, tuple): typ2 = typ2[0]
+        if type(typ1) != type(typ2):
+            raise TypeMismatchInStatement(ast)
+
+
+    def visitCallStmt(self, ast: CallStmt, stack):
+        method_name = ast.method.name
+        # TODO: Check method is declared
+        if isinstance(ast.obj, Id):
+            if ast.obj.name in stack[-1]:
+                method_sym = self.lookup(method_name, stack[-1][ast.obj.name], lambda sym: sym.sym.name)
+                if not method_sym:
+                    raise Undeclared(Method(), method_name)
+                # Check param len
+                if len(ast.param) != len(method_sym.sym.mtype.partype):
+                    raise TypeMismatchInStatement(ast)
+            else:
+                raise Undeclared(Class(), method_name)
+        else:
+            self.visit(ast.obj, stack)
+
+
 
     def visitIf(self, ast: If, c):
+        typ = self.visit(ast.expr, c)
+        if not isinstance(typ, BoolType):
+            raise TypeMismatchInStatement(ast)
+        self.visit(ast.thenStmt, c)
+        self.visit(ast.elseStmt, c)
         return None
 
-    def visitFor(self, ast: For, c):
-        return None
+
+    def visitFor(self, ast: For, stack):
+        ast.expr1
+        ast.expr2
+        ast.expr3
+        ast.id
+        stack[0].append(Symbol("For", VoidType()))
+        self.visit(ast.loop, stack)
+        stack[0] = filter(lambda sym: sym.name != "For", stack[0])
+
+
+    def visitBreak(self, ast: Break, stack):
+        # somehow stack must know that there is a loop being called
+        for scope in stack[:-1]:
+            if self.lookup("For", scope, lambda sym: sym.name if isinstance(sym, Symbol) else sym.sym.name):
+                return
+        raise MustInLoop(ast)
+
+
+    def visitContinue(self, ast: Continue, stack):
+        for scope in stack[:-1]:
+            if self.lookup("For", scope, lambda sym: sym.name if isinstance(sym, Symbol) else sym.sym.name):
+                return
+        raise MustInLoop(ast)
+
 
     def visitReturn(self, ast: Return, c):
-        return None
+        return self.visit(ast.expr, c) if ast.expr else VoidType()
 
-    def visitBreak(self, ast: Break, c):
-        return None
 
-    def visitContinue(self, ast: Continue, c):
-        return None
-
-    def visitCallExpr(self, ast: CallExpr, c): 
-        at = [self.visit(x,(c[0],False)) for x in ast.param]
-        
-        res = self.lookup(ast.method.name,c[0],lambda x: x.name)
-        if res is None or not type(res.mtype) is MType:
-            raise Undeclared(Method(),ast.method.name)
-        elif len(res.mtype.partype) != len(at):
-            if c[1]:
-                raise TypeMismatchInStatement(ast)
+    def visitCallExpr(self, ast: CallExpr, stack): 
+        method_name = ast.method.name
+        # TODO: Check method is declared
+        if isinstance(ast.obj, Id):
+            if ast.obj.name in stack[-1]:
+                method_sym = self.lookup(method_name, stack[-1][ast.obj.name], lambda sym: sym.sym.name)
+                
+                # Check param len
+                if method_sym and len(ast.param) != len(method_sym.sym.mtype.partype):
+                    raise TypeMismatchInExpression(ast)
             else:
-                raise TypeMismatchInExpression(ast)
+                raise Undeclared(Method(), method_name)
         else:
-            return res.mtype.rettype
+            self.visit(ast.obj, stack)
     
 
     def visitId(self, ast: Id, c):
         not_glob_env = c[:-1]
         for scope in not_glob_env:
             res = self.lookup(ast.name, scope, lambda sym: sym.name)
-            if res: return res
+            if res: return res, res.is_const
         raise Undeclared(Identifier(), ast.name)
 
 
     def visitBinaryOp(self, ast: BinaryOp, c):
+        ast.left
+        ast.right
+        ast.op
         return None
+
 
     def visitUnaryOp(self, ast: UnaryOp, c):
+        ast.op
+        ast.body
         return None
 
+
     def visitNewExpr(self, ast: NewExpr, c):
+        ast.classname
+        ast.param
         return None
+
 
     def visitArrayCell(self, ast: ArrayCell, c):
         return None
 
+
     def visitFieldAccess(self, ast: FieldAccess, stack):
         rettype = VoidType()
+        is_const = False
+        classes = stack[-1]
+        field = ast.fieldname.name
+
         if isinstance(ast.obj, Id):
-            if not self.lookup(ast.obj.name, stack[-1], lambda x: x):
-                raise Undeclared(Class(), ast.varType.classname.name)
-            name = self.lookup(ast.fieldname, stack[-1][ast.obj.name], lambda sym: sym.name)
-            if not name:
-                raise Undeclared(Attribute(), ast.fieldname.name)
+            class_name = ast.obj.name
+            if not self.lookup(class_name, classes, lambda x: x):
+                raise Undeclared(Class(), class_name)
+
+            attr_name = self.lookup(field, classes[class_name], lambda sym: sym.sym.name if isinstance(sym, MemSymbol) else sym.name)
+            if not attr_name:
+                raise Undeclared(Attribute(), field)
             else:
-                rettype = name.mtype
+                rettype = attr_name.mtype if isinstance(attr_name, Symbol) else attr_name.sym.is_const
+                is_const = attr_name.is_const if isinstance(attr_name, Symbol) else attr_name.sym.is_const
+        
         elif isinstance(ast.obj, FieldAccess):
             self.visit(ast.obj, stack)
-            name = self.lookup(ast.fieldname, stack[-1][ast.obj.fieldname], lambda sym: sym.name)
-            if not name:
-                raise Undeclared(Attribute(), ast.fieldname.name)
+            attr_name = self.lookup(field, classes[ast.obj.fieldname], lambda sym: sym.sym.name if isinstance(sym, MemSymbol) else sym.name)
+            if not attr_name:
+                raise Undeclared(Attribute(), field)
             else:
-                rettype = name.mtype
-        return rettype
+                rettype = attr_name.mtype if isinstance(attr_name, Symbol) else attr_name.sym.is_const
+                is_const = attr_name.is_const if isinstance(attr_name, Symbol) else attr_name.sym.is_const
+        
+        return rettype, is_const
+
 
     def visitIntLiteral(self, ast: IntLiteral, c): 
         return IntType()
 
+
     def visitFloatLiteral(self, ast: FloatLiteral, c):
         return FloatType()
+
 
     def visitStringLiteral(self, ast: StringLiteral, c):
         return StringType()
 
+
     def visitBooleanLiteral(self, ast: BooleanLiteral, c):
         return BoolType()
+
 
     # TODO: implement
     def visitArrayLiteral(self, ast: ArrayLiteral, c):
