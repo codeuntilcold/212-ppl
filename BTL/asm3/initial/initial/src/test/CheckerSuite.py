@@ -27,14 +27,14 @@ class CheckerSuite(unittest.TestCase):
                 io.putIntLn(io.getInt(4));
             }
         }"""
-        expect = "Type Mismatch In Expression: CallExpr(Id(io),Id(getInt),List(IntLiteral(4)))"
+        expect = "Type Mismatch In Expression: CallExpr(Id(io),Id(getInt),[IntLit(4)])"
         self.assertTrue(TestChecker.test(input,expect,402))
 
     def test_undeclared_function_use_ast(self):
         input = Program([
             ClassDecl(Id("Program"), [
                 MethodDecl(Static(), Id("main"), [], Block([
-                    CallExpr(Id("io"), Id("foo"), [])
+                    CallStmt(Id("io"), Id("foo"), [])
                 ]))
             ])
         ])
@@ -49,7 +49,7 @@ class CheckerSuite(unittest.TestCase):
                 ]))
             ])
         ])
-        expect = "Type Mismatch In Statement: CallStmt(Id(io),Id(putIntLn),List())"
+        expect = "Type Mismatch In Statement: Call(Id(io),Id(putIntLn),[])"
         self.assertTrue(TestChecker.test(input,expect,404))
 
     def test_diff_numofparam_stmt_use_ast(self):
@@ -62,7 +62,7 @@ class CheckerSuite(unittest.TestCase):
                 ]))
             ])
         ])
-        expect = "Type Mismatch In Expression: CallExpr(Id(io),Id(getInt),List(IntLiteral(4)))"
+        expect = "Type Mismatch In Expression: CallExpr(Id(io),Id(getInt),[IntLit(4)])"
         self.assertTrue(TestChecker.test(input,expect,405))
 
     def test_406(self):
@@ -183,14 +183,14 @@ class CheckerSuite(unittest.TestCase):
 
     def test_420(self):
         input = """Class Test {
-            Var $attri: Int;
+            Var $attri: Float;
         }
         Class Program {
             main() {
                 Var a: Int = Test::$attri;
             }
         }"""
-        expect = "Type Mismatch In Statement: VarDecl(Id(a),IntType,FieldAccess(FieldAccess(Id(Test),Id($attri)),Id(really)))"
+        expect = "Type Mismatch In Statement: VarDecl(Id(a),IntType,FieldAccess(Id(Test),Id($attri)))"
         self.assertTrue(TestChecker.test(input,expect,420))
 
     def test_421(self):
@@ -256,7 +256,7 @@ class CheckerSuite(unittest.TestCase):
                 Val d: B = New A();
             }
         }"""
-        expect = "Type Mismatch In Constant Declaration: ConstDecl(Id(d),ClassType(Id(B)),NewExpr(Id(A),[]))"
+        expect = "Type Mismatch In Constant Declaration: ConstDecl(Id(a),ClassType(Id(B)),NewExpr(Id(A),[]))"
         self.assertTrue(TestChecker.test(input,expect,426))
 
     def test_427(self):
@@ -320,95 +320,247 @@ class CheckerSuite(unittest.TestCase):
         expect = "Break Not In Loop"
         self.assertTrue(TestChecker.test(input,expect,431))
 
-    # def test_432(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,432))
+    def test_432(self):
+        input = """Class Program{
+            main() {
+                Var i: Float;
+                Foreach(i In 1 .. 10) {
+                    ## Do nothing ##
+                }
+            }
+        }"""
+        expect = "Type Mismatch In Statement: For(Id(i),IntLit(1),IntLit(10),Block([]),IntLit(1))"
+        self.assertTrue(TestChecker.test(input,expect,432))
 
-    # def test_433(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,433))
+    def test_433(self):
+        input = """Class Program{
+            main() {
+                Var i: Int;
+                Foreach(i In 1 .. 10.2) {
+                    ## Do nothing ##
+                }
+            }
+        }"""
+        expect = "Type Mismatch In Statement: For(Id(i),IntLit(1),FloatLit(10.2),Block([]),IntLit(1))"
+        self.assertTrue(TestChecker.test(input,expect,433))
 
-    # def test_434(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,434))
+    def test_434(self):
+        input = """Class Program{
+            main() {
+                Var i: Float;
+                Foreach(i In 1 + 1 .. 10 + 0.5) {
+                    ## Do nothing ##
+                }
+            }
+        }"""
+        expect = "Type Mismatch In Statement: For(Id(i),BinaryOp(+,IntLit(1),IntLit(1)),BinaryOp(+,IntLit(10),FloatLit(0.5)),Block([]),IntLit(1))"
+        self.assertTrue(TestChecker.test(input,expect,434))
 
-    # def test_435(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,435))
+    def test_435(self):
+        input = """Class Program{
+            main() {
+                Var i: Float;
+                Var j: Int;
+                i = j;
+                j = i;
+            }
+        }"""
+        expect = "Type Mismatch In Statement: AssignStmt(Id(j),Id(i))"
+        self.assertTrue(TestChecker.test(input,expect,435))
 
-    # def test_436(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,436))
+    def test_436(self):
+        input = """Class Program{
+            main() {
+                Var i: Bool;
+                Var j: Int;
+                i = j == j;
+                i = j;
+                j = i;
+            }
+        }"""
+        expect = "Type Mismatch In Statement: AssignStmt(Id(i),Id(j))"
+        self.assertTrue(TestChecker.test(input,expect,436))
 
-    # def test_437(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,437))
+    def test_437(self):
+        input = """Class Program{
+            main() {
+                Var i: Bool;
+                Var j: Int;
+                Val k: Float;
+                i = j == j;
+                i = j >= k;
+                i = (j <= k) && (j < k) || (j > k);
+                j = i;
+            }
+        }"""
+        expect = "Type Mismatch In Statement: AssignStmt(Id(j),Id(i))"
+        self.assertTrue(TestChecker.test(input,expect,437))
 
-    # def test_438(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,438))
+    def test_438(self):
+        input = """Class Program{
+            main() {
+                Var i: Array[Int, 3] = Array(0,1,2);
+                Var j: Array[Float, 3] = Array(0,1.1,1.2);
 
-    # def test_439(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,439))
+                Var b: Boolean = i == j;
+                b = i;
+            }
+        }"""
+        expect = "Type Mismatch In Statement: AssignStmt(Id(b),Id(i))"
+        self.assertTrue(TestChecker.test(input,expect,438))
 
-    # def test_440(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,440))
+    def test_438(self):
+        input = """Class Program{
+            main() {
+                io.putIntLn(5);
+                io.putFloatLn(5);
+                io.putIntLn(5.3);
+            }
+        }"""
+        expect = "Type Mismatch In Expression: FloatLit(5.3)"
+        self.assertTrue(TestChecker.test(input,expect,439))
 
-    # def test_441(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,441))
+    def test_440(self):
+        input = """Class Program{
+            main() {
+                Val a: Int = 0;
+                a.toString();
+            }
+        }"""
+        expect = "Type Mismatch In Statement: Call(Id(a),Id(toString),[])"
+        self.assertTrue(TestChecker.test(input,expect,440))
 
-    # def test_442(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,442))
+    def test_441(self):
+        input = """Class Program {
+            main() {
+                (1 + 2).toString();
+            }
+        }"""
+        expect = "Type Mismatch In Statement: Call(BinaryOp(+,IntLit(1),IntLit(2)),Id(toString),[])"
+        self.assertTrue(TestChecker.test(input,expect,441))
 
-    # def test_443(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,443))
+    def test_442(self):
+        input = """Class Rect {
+            $method() {
+                Return 1;
+            }
+        }
+        Class Program {
+            main() {
+                Rect::$method();
+            }
+        }"""
+        expect = "Type Mismatch In Statement: Call(Id(Rect),Id($method),[])"
+        self.assertTrue(TestChecker.test(input,expect,442))
 
-    # def test_444(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,444))
+    def test_443(self):
+        input = """Class Rect {
+            $method() {
+                Return 1;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Bool;
+                Var b: Int;
+                Var c: Float;
 
-    # def test_445(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,445))
+                b = Rect::$method();
+                c = Rect::$method();
+                a = Rect::$method();
+            }
+        }"""
+        expect = "Type Mismatch In Statement: Assign(Id(a),CallExpr(Id(Rect),Id($method),[]))"
+        self.assertTrue(TestChecker.test(input,expect,443))
 
-    # def test_446(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,446))
+    def test_444(self):
+        input = """Class Program {
+            main() {
+                Var arr: Array[Int, 5] = Array(0,1,2,2,3);
+                Var idx: Int = 0;
+                Var b: Boolean = True;
+                arr[idx] = arr[idx + 1];
+                idx = arr[another];
+            }
+        }"""
+        expect = "Type Mismatch In Expression: ArrayCell(Id(arr),[Id(another)])"
+        self.assertTrue(TestChecker.test(input,expect,444))
 
-    # def test_447(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,447))
+    def test_445(self):
+        input = """Class Program {
+            main() {
+                Var a: Int = 0;
+                Var b: Boolean = True;
+                Var c: Float = 0.5;
 
-    # def test_448(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,448))
+                c = c + a;
+                c = c + c;
+                b = b || b;
+                c = b + a;
+            }
+        }"""
+        expect = "Type Mismatch In Expression: BinaryOp(+,Id(b),Id(a))"
+        self.assertTrue(TestChecker.test(input,expect,445))
 
-    # def test_449(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,449))
+    def test_446(self):
+        input = """Class Program {
+            main() {
+                Var a: Int = 5;
+                a = -a;
+                a = a + a;
+                a = !a;
+            }
+        }"""
+        expect = "Type Mismatch In Expression: UnaryOp(!,Id(a))"
+        self.assertTrue(TestChecker.test(input,expect,446))
+
+    def test_447(self):
+        input = """Class Rect {
+            Var $attri: Float;
+            $method() {
+                Return 1;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Int = Rect::$method();
+                a = Rect::$attri;
+            }
+        }"""
+        expect = "Type Mismatch In Expression: FieldAccess(Id(Rect),Id($attri))"
+        self.assertTrue(TestChecker.test(input,expect,447))
+
+    def test_448(self):
+        input = """Class Rect {
+            Var $attri: Float;
+            $method() {
+                Return 1;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Int = Rect::$method();
+                a = a::$attri;
+            }
+        }"""
+        expect = "Type Mismatch In Expression: FieldAccess(Id(a),Id($attri))"
+        self.assertTrue(TestChecker.test(input,expect,448))
+
+    def test_449(self):
+        input = """Class Rect {
+            Var $attri: Float;
+            $method() {
+                Return 1;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Int = Rect::$method();
+                a = a::$method();
+            }
+        }"""
+        expect = "Type Mismatch In Expression: CallExpr(Id(a),Id($method),[])"
+        self.assertTrue(TestChecker.test(input,expect,449))
 
     # def test_450(self):
     #     input = """"""

@@ -2,6 +2,7 @@
 """
  * @author nhphung
 """
+from ast import arg
 from AST import * 
 from Visitor import *
 from Utils import Utils
@@ -50,6 +51,12 @@ class StaticChecker(BaseVisitor,Utils):
             raise Undeclared(Class(), classtype.classname.name)
         return classtype
 
+    @staticmethod
+    def log(msg):
+        print('='*60)
+        print(msg)
+        print('='*60)
+
     """
             VISITORS
     """
@@ -77,11 +84,16 @@ class StaticChecker(BaseVisitor,Utils):
 
         if cname in c:
             raise Redeclared(Class(), cname)
-        if parent_cname and not parent_cname in c:
-            raise Undeclared(Class(), parent_cname)
-        
-        # Holds an array of Symbols
         c[cname] = []
+        
+        if parent_cname:
+            if not parent_cname in c:
+                raise Undeclared(Class(), parent_cname)
+            else:
+                pass
+                # TODO: Support polymorphism
+
+        # Holds an array of Symbols
         # Pass the global class env and also name of current class for members
         [self.visit(mem, (c, cname)) for mem in ast.memlist]
 
@@ -98,7 +110,7 @@ class StaticChecker(BaseVisitor,Utils):
         typ = decl.constType if is_const else decl.varType
         StaticChecker.check_undeclared_class(typ, classes[0])
 
-        classes[0][cname].append(MemSymbol(is_static, Symbol(attr_name, typ)))
+        classes[0][cname].append(MemSymbol(is_static, Symbol(attr_name, typ, is_const)))
     
 
     def visitMethodDecl(self, ast: MethodDecl, classes):
@@ -192,6 +204,12 @@ class StaticChecker(BaseVisitor,Utils):
                 # Check param len
                 if len(ast.param) != len(method_sym.sym.mtype.partype):
                     raise TypeMismatchInStatement(ast)
+                # Check param type
+                partype = [type(par) for par in method_sym.sym.mtype.partype]
+                for (arg, ptype) in list(zip(ast.param, partype)):
+                    vartype = type(self.visit(arg, stack))
+                    if vartype != ptype:
+                        raise TypeMismatchInExpression(arg)
             else:
                 raise Undeclared(Class(), method_name)
         else:
@@ -236,7 +254,7 @@ class StaticChecker(BaseVisitor,Utils):
     def visitReturn(self, ast: Return, c):
         return self.visit(ast.expr, c) if ast.expr else VoidType()
 
-
+    # WIP
     def visitCallExpr(self, ast: CallExpr, stack): 
         method_name = ast.method.name
         # TODO: Check method is declared
@@ -311,6 +329,9 @@ class StaticChecker(BaseVisitor,Utils):
                 rettype = attr_name.mtype if isinstance(attr_name, Symbol) else attr_name.sym.is_const
                 is_const = attr_name.is_const if isinstance(attr_name, Symbol) else attr_name.sym.is_const
         
+        # print('='*60)
+        # print(field + " is " + str(is_const))
+        # print('='*60)
         return rettype, is_const
 
 
