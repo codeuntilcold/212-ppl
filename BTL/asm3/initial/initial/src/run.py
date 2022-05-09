@@ -60,7 +60,17 @@ def test(suite):
     print('Errors ', result.errors)
     # pprint(result.failures)
     stream.seek(0)
+    mystream = StringIO(stream.getvalue())
     print('Test output\n', stream.read())
+
+    def custom_failures_printer(stream: StringIO):
+        dot_and_F = stream.readlines()[0]
+        Fs = []
+        for case in range(len(dot_and_F)):
+            if dot_and_F[case] == 'F':
+                Fs.append(case)
+        print('You failed these testcases: ', Fs)
+    custom_failures_printer(mystream)
 
 def printUsage():
     print("python3 run.py gen")
