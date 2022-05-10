@@ -226,7 +226,7 @@ class CheckerSuite(unittest.TestCase):
                 Var a: Int = io.nonexistent_attr.really;
             }
         }"""
-        expect = "Undeclared Attribute: nonexistent_attr"
+        expect = "Illegal Member Access: FieldAccess(Id(io),Id(nonexistent_attr))"
         self.assertTrue(TestChecker.test(input,expect,419))
 
     def test_420(self):
@@ -451,7 +451,7 @@ class CheckerSuite(unittest.TestCase):
         input = """Class Program{
             main() {
                 Var i: Array[Int, 3] = Array(0,1,2);
-                Var j: Array[Float, 3] = Array(0,1.1,1.2);
+                Var j: Array[Float, 3] = Array(0.0,1.1,1.2);
                 j = i;
                 Var b: Boolean;
                 b = i;
@@ -492,7 +492,7 @@ class CheckerSuite(unittest.TestCase):
             Constructor() {}
             Constructor() {}
         }"""
-        expect = "Redeclared Special Method: Constructor"
+        expect = "Redeclared Method: Constructor"
         self.assertTrue(TestChecker.test(input,expect,441))
 
     def test_442(self):
@@ -599,7 +599,7 @@ class CheckerSuite(unittest.TestCase):
                 a = a::$attri;
             }
         }"""
-        expect = "Type Mismatch In Expression: FieldAccess(Id(a),Id($attri))"
+        expect = "Undeclared Class: a"
         self.assertTrue(TestChecker.test(input,expect,448))
 
     def test_449(self):
@@ -615,7 +615,7 @@ class CheckerSuite(unittest.TestCase):
                 a = a::$method();
             }
         }"""
-        expect = "Type Mismatch In Expression: CallExpr(Id(a),Id($method),[])"
+        expect = "Undeclared Class: a"
         self.assertTrue(TestChecker.test(input,expect,449))
 
     def test_450(self):
@@ -655,7 +655,7 @@ class CheckerSuite(unittest.TestCase):
                 Var a: Int = x::$sta;
             }
         }"""
-        expect = "Illegal Member Access: FieldAccess(Id(x),Id($sta))"
+        expect = "Undeclared Class: x"
         self.assertTrue(TestChecker.test(input,expect,452))
 
     def test_453(self):
@@ -671,7 +671,7 @@ class CheckerSuite(unittest.TestCase):
                 Var a: Int = x::$sta();
             }
         }"""
-        expect = "Illegal Member Access: CallExpr(Id(x),Id($sta),[])"
+        expect = "Undeclared Class: x"
         self.assertTrue(TestChecker.test(input,expect,453))
 
     def test_454(self):
@@ -726,7 +726,7 @@ class CheckerSuite(unittest.TestCase):
                 Var a: Int = Rect::$arr;
             }
         }"""
-        expect = "Type Mismatch In Expression: FieldAccess(Id(Rect),Id($arr))"
+        expect = "Type Mismatch In Statement: VarDecl(Id(a),IntType,FieldAccess(Id(Rect),Id($arr)))"
         self.assertTrue(TestChecker.test(input,expect,457))
 
     def test_458(self):
@@ -810,7 +810,7 @@ class CheckerSuite(unittest.TestCase):
                 b = 5;
             }
         }"""
-        expect = "Illegal Member Access: FieldAccess(Id(a),Id(x))"
+        expect = "Undeclared Identifier: b"
         self.assertTrue(TestChecker.test(input,expect,462))
 
     def test_463(self):
@@ -833,11 +833,12 @@ class CheckerSuite(unittest.TestCase):
 
     def test_465(self):
         input = """Class Program{
-            Val $someStatic : Int = 10;
+            Val $someStatic: Int = 10;
             main() {
-                Var Program : Float = 1.0;
-                Var x : Int = Program::$someStatic;
-        }
+                Var Program: Float = 1.0;
+                Var x: Int = Program::$someStatic;
+                Program::$someStatic = Program;
+            }
         }"""
         expect = "Type Mismatch In Expression: FieldAccess(Id(Program),Id($someStatic))"
         self.assertTrue(TestChecker.test(input,expect,465))
@@ -850,18 +851,21 @@ class CheckerSuite(unittest.TestCase):
                 Var x : Int = 1 + Car;
             }
         }"""
-        expect = "Type Mismatch In Expression: BinaryOp(+,IntLit(1),Id(Car))"
+        expect = "Undeclared Identifier: Car"
         self.assertTrue(TestChecker.test(input,expect,466))
 
     def test_467(self):
-        input = """Class Car {}
+        input = """Class Car {
+            Var tire: Int;
+            Var npp: Int = Self.tire * 12 + tire;
+        }
         Class Program{
             Var a : Int;
             main(){
                 Var y : Int = 1 + Self.a;
             }
         }"""
-        expect = "Illegal Member Access: FieldAccess(Self(),Id(a))"
+        expect = "Undeclared Identifier: tire"
         self.assertTrue(TestChecker.test(input,expect,467))
 
     def test_468(self):
@@ -902,7 +906,7 @@ class CheckerSuite(unittest.TestCase):
     def test_471(self):
         input = """Class Program {
             main() {
-                Var a: Array[Float, 2] = Array(1, 1.2);
+                Var a: Array[Float, 2] = Array(1.0, 1.2);
                 Var b: Array[Int, 2] = Array(1, True);
             }
         }"""
@@ -942,6 +946,10 @@ class CheckerSuite(unittest.TestCase):
         input = """Class Program {
             $doesReturn() {
                 If (True) { Return 1; }
+                Else {
+                    Val imm: Int = 3;
+                    Return imm;
+                }
             }
             main() {
                 Program::$doesReturn();
@@ -986,9 +994,10 @@ class CheckerSuite(unittest.TestCase):
                 Var a: Car;
                 Var b: Int = a.getTire();
                 Var c: Int = a.tire;
+                d = c;
             }
         }"""
-        expect = "Illegal Member Access: FieldAccess(Id(a),Id(tire))"
+        expect = "Undeclared Identifier: d"
         self.assertTrue(TestChecker.test(input,expect,477))
 
     def test_478(self):
@@ -1065,7 +1074,7 @@ class CheckerSuite(unittest.TestCase):
                 );
                 Var b: Array[String, 1] = a[0][0];
                 Var c: String = a[0][0][0];
-                d = 5;
+                d.e = 10;
             }
         }"""
         expect = "Undeclared Identifier: d"
@@ -1111,67 +1120,210 @@ class CheckerSuite(unittest.TestCase):
     def test_487(self):
         input = """Class Program {
             Var a: Int;
-            Var b: Int = 1 + a;
+            Var b: Int = 1 + Self.a;
+            Var c: Int = 1 + a;
         }"""
         expect = "Undeclared Identifier: a"
         self.assertTrue(TestChecker.test(input,expect,487))
 
-    # def test_488(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,488))
+    def test_488(self):
+        input = """Class Program {
+            main() {
+                If (True) {
 
-    # def test_489(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,489))
+                } Elseif (True) {
 
-    # def test_490(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,490))
+                } Elseif (True) {
+                    Var b: Int;
+                    If (b) {
+                        Return True;
+                    }
+                } Else {
 
-    # def test_491(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,491))
+                }
+            }
+        }"""
+        expect = "Type Mismatch In Statement: If(Id(b),Block([Return(BooleanLit(True))]))"
+        self.assertTrue(TestChecker.test(input,expect,488))
 
-    # def test_492(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,492))
+    def test_489(self):
+        input = """
+        Class Program {
+            main() {
+                Var myArray: Array[Array[Array[Int,4],2],2] = Array(
+                    Array(
+                        Array(1,2,3,4),
+                        Array(5,6,7,8)
+                    ),
+                    Array(
+                        Array(-1,-2,-3,-4),
+                        Array(-5,-6,-7,False)
+                    )
+                );
+            }
+        }"""
+        expect = "Illegal Array Literal: [[[IntLit(1),IntLit(2),IntLit(3),IntLit(4)],[IntLit(5),IntLit(6),IntLit(7),IntLit(8)]],[[UnaryOp(-,IntLit(1)),UnaryOp(-,IntLit(2)),UnaryOp(-,IntLit(3)),UnaryOp(-,IntLit(4))],[UnaryOp(-,IntLit(5)),UnaryOp(-,IntLit(6)),UnaryOp(-,IntLit(7)),BooleanLit(False)]]]"
+        self.assertTrue(TestChecker.test(input,expect,489))
 
-    # def test_493(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,493))
+    def test_490(self):
+        input = """
+        Class Rect {
+            Var $totalRect: Int = 0;
+            Var $totalArea: Float = 0;
 
-    # def test_494(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,494))
+            Var width, length: Float;
 
-    # def test_495(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,495))
+            area() {
+                Return Self.width * Self.heig;
+            }
 
-    # def test_496(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,496))
+            Constructor(w, l: Float) {
+                Self.width = w;
+                Self.length = l;
+                Rect::$totalRect = Rect::$totalRect + 1;
+                Rect::$totalArea = Rect::$totalArea + Self.area();
+            }
+        }
+        Class Program {
+            main() {
 
-    # def test_497(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,497))
+            }
+        }"""
+        expect = "Undeclared Attribute: heig"
+        self.assertTrue(TestChecker.test(input,expect,490))
 
-    # def test_498(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,498))
+    def test_491(self):
+        input = """
+        Class IO {
+            $getInt() { Return 1; }
+            $putIntLn(a: Int) {}
+            $putFloatLn(a: Float) {}
+        }
+        Class Rect {
+            Var $totalRect: Int = 0;
+            Var $totalArea: Float = 0;
 
-    # def test_499(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestChecker.test(input,expect,499))
+            Var width, length: Float;
+
+            area() {
+                Return Self.width * Self.length;
+            }
+
+            Constructor(w, l: Float) {
+                Self.width = w;
+                Self.length = l;
+                Rect::$totalRect = Rect::$totalRect + 1;
+                Rect::$totalArea = Rect::$totalArea + Self.area();
+            }
+
+            draw(x, y: Float) {}
+        }
+        Class Program {
+            main() {
+                Var shape: Rect = New Rect(3, 4);
+                IO::$putFloatLn(shape.area());
+                shape.length = shape.length / 3;
+                IO::$putFloatLn(shape.area());
+                IO::$putFloatLn(Rect::$totalArea);
+
+                Val area: Float = shape.area();
+            }
+        }
+        """
+        expect = "Illegal Constant Expression: CallExpr(Id(shape),Id(area),[])"
+        self.assertTrue(TestChecker.test(input,expect,491))
+
+    def test_492(self):
+        input = """Class Program {
+            main() {
+                Var a: Array[Float, 2] = Array(0, 1.1);
+            }
+        }"""
+        expect = "Illegal Array Literal: [IntLit(0),FloatLit(1.1)]"
+        self.assertTrue(TestChecker.test(input,expect,492))
+
+    def test_493(self):
+        input = """
+        Class A {
+            Var a: Int;  ## instance attribute of class A ##
+        }
+        Class Program {
+            main(){
+                Var obj: A = New A();  ## object of class A ##
+                Var b: Int = obj.a;        ## access instance attribute of class A ##
+                a = 5;
+            }
+        }"""
+        expect = "Undeclared Identifier: a"
+        self.assertTrue(TestChecker.test(input,expect,493))
+
+    def test_494(self):
+        input = """
+        Class A {
+            Var a: Int;  ## instance attribute of class A ##
+        }
+        Class B: A {
+            foo(){
+                Var x: Int = Self.a;   ## member of class A ##
+            }
+        }"""
+        expect = "Undeclared Attribute: a"
+        self.assertTrue(TestChecker.test(input,expect,494))
+
+    def test_495(self):
+        input = """
+        Class Program{
+            foo(){
+                Val x: Int = 1;
+                Return x;
+            }
+            foo2(){
+                Var x: Int = 1;
+                Return x;
+            }
+            main(){
+                Val y1: Int = Self.foo() + 1; ## OK since Self.foo() return Constant ##
+                Val y2: Int = Self.foo2() + 1; ## Raise error because Self.foo2() return Variable ##
+            }
+        }"""
+        expect = "Illegal Constant Expression: BinaryOp(+,CallExpr(Self(),Id(foo),[]),IntLit(1))"
+        self.assertTrue(TestChecker.test(input,expect,495))
+
+    def test_496(self):
+        input = """
+        Class A {
+            $foo(){}
+        }
+        Class Program {
+            main(){
+                Var y : A = New A();
+                Var z : Int = 10;
+                y::$foo(); ## 1 ##
+                z::$foo(); ## 2 ##
+            }
+        }"""
+        expect = "Undeclared Class: y"
+        self.assertTrue(TestChecker.test(input,expect,496))
+
+    def test_497(self):
+        input = """Class A{
+            Val y:Int=10;
+        }
+        Class B{
+            Var x:A;
+            func (){
+                Val z:Int=Self.x.y;
+            }
+        }"""
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input,expect,497))
+
+    def test_498(self):
+        input = """Class Program {}"""
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input,expect,498))
+
+    def test_499(self):
+        input = """Class Program {}"""
+        expect = "No Entry Point"
+        self.assertTrue(TestChecker.test(input,expect,499))

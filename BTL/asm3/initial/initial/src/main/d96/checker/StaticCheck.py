@@ -1,9 +1,12 @@
 """
  * @author nhphung
 """
-from AST import * 
+from AST import *
 from Visitor import *
 from StaticError import *
+
+ENABLE_PRIVATE_ATTRIBUTE = False
+ENABLE_ARRAYLIT_COERCE = False
 
 class MType:
     def __init__(self, partype, rettype):
@@ -12,6 +15,14 @@ class MType:
 
     def __str__(self):
         return 'MType(' + ', '.join([str(self.partype), str(self.rettype)]) + ')'
+
+# Class Identifier == NameSpace (NS)
+class NSType:
+    def __init__(self, cname):
+        self.cname = cname
+
+    def __str__(self):
+        return "CName(" + self.cname + ")"
 
 class Symbol:
     def __init__(self, name, mtype, is_const = False):
@@ -33,7 +44,7 @@ class StaticChecker(BaseVisitor):
         self.is_declaring_static = False
         self.has_explicit_constructor = False
         self.has_explicit_return = False
- 
+
     def check(self):
         return self.visit(self.ast, None)
 
@@ -41,16 +52,22 @@ class StaticChecker(BaseVisitor):
     """
             HELPERS
     """
+
+    def log(self, msg):
+        print('='*60)
+        print(str(msg))
+        print('='*60)
+
     def lookup(self,name,lst,func):
         for x in lst:
             if name == func(x):
                 return x
         return None
-    
-    def lookup_attribute(self, attr_name, class_name, stack):
+
+    def lookup_attribute(self, attr_name, class_name, stack) -> (None or Symbol):
         classes = stack if isinstance(stack, dict) else stack[-1]
-        if class_name in classes: 
-            syms = classes[class_name] 
+        if class_name in classes:
+            syms = classes[class_name]
         else:
             raise Undeclared(Class(), class_name)
         for sym in syms:
@@ -58,27 +75,16 @@ class StaticChecker(BaseVisitor):
                 return sym
         return None
 
-    def lookup_method(self, method_name, class_name, stack):
+    def lookup_method(self, method_name, class_name, stack) -> (None or Symbol):
         classes = stack if isinstance(stack, dict) else stack[-1]
-        if class_name in classes: 
-            syms = classes[class_name] 
+        if class_name in classes:
+            syms = classes[class_name]
         else:
             raise Undeclared(Class(), class_name)
         for sym in syms:
             if sym.name == method_name and isinstance(sym.mtype, MType):
                 return sym
         return None
-
-    def check_undeclared_class(self, classtype, stack):
-        classes = stack[-1] if isinstance(stack, list) else stack
-        if isinstance(classtype, ClassType) and not classtype.classname.name in classes:
-            raise Undeclared(Class(), classtype.classname.name)
-        return classtype
-
-    def log(self, msg):
-        print('='*60)
-        print(str(msg))
-        print('='*60)
 
     def lookup_in_local_scopes(self, name, stack) -> (None or Symbol):
         # If not in local scope, return none
@@ -89,7 +95,19 @@ class StaticChecker(BaseVisitor):
             if sym: return sym
         return None
 
-    def check_args_match_params(self, ast, method_sym, stack, err):
+    def check_undeclared_class(self, classtype, stack):
+        classes = stack[-1] if isinstance(stack, list) else stack
+        if isinstance(classtype, ClassType):
+            if not classtype.classname.name in classes:
+                raise Undeclared(Class(), classtype.classname.name)
+            else:
+                return classtype
+        else:
+            # Parameter is not classtype, returning
+            return classtype
+
+    def check_args_match_params(self, ast, method_sym, stack):
+        err = TypeMismatchInExpression if isinstance(ast, Expr) else TypeMismatchInStatement
         # Check param len
         if len(ast.param) != len(method_sym.mtype.partype):
             raise err(ast)
@@ -98,29 +116,60 @@ class StaticChecker(BaseVisitor):
             vartype = self.visit(arg, stack)
             if not self.can_coerce(partype, vartype):
                 raise err(ast)
-    
-    def check_illegal_mem_access(self, expr: (FieldAccess or CallExpr), stack):
-        if type(expr) == FieldAccess:
-            mem_name = expr.fieldname.name
-            is_static = "$" in mem_name
-            accessor = self.visit(expr.obj, stack)
-            # If accessor is Class and accessing an instance attribute, then throw
-            if type(expr.obj) == Id and type(accessor) == ClassType and not is_static:
-                raise IllegalMemberAccess(expr)
-            # if accessor is a class instance and accessing a static attribute, then throw
-            if type(expr.obj) == FieldAccess and type(accessor) == ClassType and is_static:
-                raise IllegalMemberAccess(expr)
+
+    def check_obj_and_mem_name(self, ast: (CallExpr or CallStmt or FieldAccess), stack) -> Symbol:
+        mem_name = ast.fieldname.name if isinstance(ast, FieldAccess) else ast.method.name
+        is_callee_static = '$' in mem_name
+        err = TypeMismatchInExpression if isinstance(ast, Expr) else TypeMismatchInStatement
+
+        # If calling static, immediately check if that class has been declared
+        if is_callee_static:
+            self.check_undeclared_class(ClassType(ast.obj), stack)
+            class_name = ast.obj.name
         else:
-            mem_name = expr.method
-            is_static = "$" in mem_name
-            accessor = self.visit(expr.obj, stack)
-            # If accessor is Class and accessing an instance attribute, then throw
-            if type(expr.obj) == Id and type(accessor) == ClassType and not is_static:
-                raise IllegalMemberAccess(expr)
-            # if accessor is a class instance and accessing a static attribute, then throw
-            if type(expr.obj) == CallExpr and type(accessor) == ClassType and is_static:
-                raise IllegalMemberAccess(expr)
+            caller_type = self.visit(ast.obj, stack)
+            # If caller is a class name, then must throw illegal member access
+            if isinstance(caller_type, NSType):
+                raise IllegalMemberAccess(ast)
+            if not isinstance(caller_type, ClassType):
+                raise err(ast)
+            # If access an instance inside a static method
+            if self.is_declaring_static:
+                raise IllegalMemberAccess(ast)
+            class_name = caller_type.classname.name
+        
+        if ENABLE_PRIVATE_ATTRIBUTE:
+            if class_name != self.curr_class_name and isinstance(ast, FieldAccess):
+                # Accessing public attribute
+                if is_callee_static:
+                    pass
+                # Accessing private attribute
+                else:
+                    raise IllegalMemberAccess(ast)
+        
+        if isinstance(ast, FieldAccess):
+            attr_sym = self.lookup_attribute(mem_name, class_name, stack)
+            if attr_sym:
+                return attr_sym
+            else:
+                raise Undeclared(Attribute(), mem_name)
+        else:
+            method_sym = self.lookup_method(mem_name, class_name, stack)
+            if method_sym:
+                return method_sym
+            else:
+                raise Undeclared(Method(), mem_name)
     
+    def check_method_call(self, ast: (CallExpr or CallStmt), stack):
+        method_sym = self.check_obj_and_mem_name(ast, stack)
+        self.check_args_match_params(ast, method_sym, stack)
+
+        if isinstance(ast, CallStmt) and not isinstance(method_sym.mtype.rettype, VoidType) or \
+        isinstance(ast, CallExpr) and isinstance(method_sym.mtype.rettype, VoidType):
+            raise TypeMismatchInStatement(ast) if isinstance(ast, CallStmt) else TypeMismatchInExpression(ast)
+
+        return method_sym.mtype.rettype
+
     def can_coerce(self, tleft, tright):
         if type(tleft) == type(tright):
             if isinstance(tleft, ArrayType):
@@ -135,16 +184,18 @@ class StaticChecker(BaseVisitor):
         elif type(tleft) == VoidType and type(tright) == ClassType:
             return True
         return False
-    
+
     def is_const(self, value, stack):
-        if isinstance(value, Literal):
+        if value is None:
+            return False
+        elif isinstance(value, Literal):
             return True
         elif isinstance(value, Id):
             var_sym = self.lookup_in_local_scopes(value.name, stack)
             if var_sym:
                 return var_sym.is_const
             else:
-                Undeclared(Identifier(), value.name)
+                raise Undeclared(Identifier(), value.name)
         elif isinstance(value, FieldAccess):
             ctype = self.visit(value.obj, stack)
             if isinstance(ctype, ClassType):
@@ -152,7 +203,12 @@ class StaticChecker(BaseVisitor):
                 if dot_sym:
                     return dot_sym.is_const
                 else:
-                    self.log("IN HERE WITH " + value.fieldname.name)
+                    raise Undeclared(Attribute(), value.fieldname.name)
+            elif isinstance(ctype, NSType):
+                dot_sym = self.lookup_attribute(value.fieldname.name, ctype.cname, stack)
+                if dot_sym:
+                    return dot_sym.is_const
+                else:
                     raise Undeclared(Attribute(), value.fieldname.name)
             else:
                 raise TypeMismatchInExpression(value)
@@ -171,10 +227,22 @@ class StaticChecker(BaseVisitor):
             self.curr_method_sym.name == 'main' and \
             len(self.curr_method_sym.mtype.partype) == 0 and \
             isinstance(self.curr_method_sym.mtype.rettype, VoidType)
-    
+
+    def enforce_access(self, value: Expr):
+        if isinstance(value, Id):
+            raise Undeclared(Identifier(), value.name)
+        elif isinstance(value, ArrayCell):
+            self.enforce_access(value.arr)
+        elif isinstance(value, UnaryOp):
+            self.enforce_access(value.body)
+        elif isinstance(value, BinaryOp):
+            self.enforce_access(value.left)
+            self.enforce_access(value.right)
+
     """
             VISITORS
     """
+
     def visitProgram(self, ast: Program, c):
         # Check for Undeclared/Redeclared first
         env = {}
@@ -183,8 +251,8 @@ class StaticChecker(BaseVisitor):
             ret.append(self.visit(decl, env))
             # Check for entry
             if decl.classname.name == "Program" and not any(
-                isinstance(mem, MethodDecl) 
-                    and mem.name.name == "main" 
+                isinstance(mem, MethodDecl)
+                    and mem.name.name == "main"
                     and len(mem.param) == 0
                 for mem in decl.memlist
             ):
@@ -193,6 +261,7 @@ class StaticChecker(BaseVisitor):
             raise NoEntryPoint()
 
         return ret
+
 
     def visitClassDecl(self, ast: ClassDecl, c):
         cname = ast.classname.name
@@ -214,53 +283,24 @@ class StaticChecker(BaseVisitor):
             self.curr_method_sym = None
             self.is_declaring_static = False
 
-
-    def visitAttributeDecl(self, ast: AttributeDecl, classes):
-        cname = self.curr_class_name
-        decl = ast.decl
-        is_const = isinstance(decl, ConstDecl)
-        attr_name = decl.constant.name if is_const else decl.variable.name
-        self.is_declaring_static = '$' in attr_name
-        
-        if self.lookup_attribute(attr_name, cname, classes):
-            raise Redeclared(Attribute(), attr_name)
-
-        typ = decl.constType if is_const else decl.varType
-        self.check_undeclared_class(typ, classes)
-
-        if is_const:
-            if decl.value is None:
-                raise IllegalConstantExpression(None)
-            
-            if not self.is_const(decl.value, classes):
-                raise IllegalConstantExpression(decl.value)
-            
-            if not self.can_coerce(decl.constType, self.visit(decl.value, classes)):
-                raise TypeMismatchInConstant(ast)
-        else:
-            if decl.varInit and not self.can_coerce(decl.varType, self.visit(decl.varInit, classes)):
-                raise TypeMismatchInStatement(ast)
-
-        classes[cname].append(Symbol(attr_name, typ, is_const))
-    
-    
+    # TODO: Default destructor
     def visitMethodDecl(self, ast: MethodDecl, classes):
         cname = self.curr_class_name
         method_name = ast.name.name
         if self.lookup_method(method_name, cname, classes):
-            if method_name == 'Constructor': 
+            if method_name == 'Constructor':
                 if self.has_explicit_constructor:
-                    raise Redeclared(SpecialMethod(), method_name) 
+                    raise Redeclared(Method(), method_name)
             elif method_name == 'Destructor':
-                raise Redeclared(SpecialMethod(), method_name)
-            else: 
                 raise Redeclared(Method(), method_name)
-                
+            else:
+                raise Redeclared(Method(), method_name)
+
         stack = [[Symbol(p.variable.name, p.varType) for p in ast.param]] + [classes]
         # Check for redeclared parameter
         parname = set()
         for par in stack[0]:
-            self.check_undeclared_class(par.mtype, stack) 
+            self.check_undeclared_class(par.mtype, stack)
             if par.name in parname:
                 raise Redeclared(Parameter(), par.name)
             parname.add(par.name)
@@ -268,19 +308,40 @@ class StaticChecker(BaseVisitor):
         if method_name == 'Constructor':
             classes[cname] = list(filter(lambda sym: sym.name != method_name, classes[cname]))
             self.has_explicit_constructor = True
-        
+
         classes[cname].append(
             Symbol(method_name, MType([p.varType for p in ast.param], VoidType()))
         )
         self.curr_method_sym = classes[cname][-1]
-        self.is_declaring_static = '$' in method_name or self.is_in_main()
+        self.is_declaring_static = '$' in method_name
         self.has_explicit_return = False
         self.visit(ast.body, stack)
 
 
-    def visitBlock(self, ast: Block, stack):
-        for stmt in ast.inst:    
-            self.visit(stmt, stack)
+    def visitAttributeDecl(self, ast: AttributeDecl, classes):
+        cname = self.curr_class_name
+        decl = ast.decl
+        is_const = isinstance(decl, ConstDecl)
+        attr_name = decl.constant.name if is_const else decl.variable.name
+        typ = decl.constType if is_const else decl.varType
+        self.is_declaring_static = '$' in attr_name
+
+        if self.lookup_attribute(attr_name, cname, classes):
+            raise Redeclared(Attribute(), attr_name)
+        self.check_undeclared_class(typ, classes)
+
+        if is_const:
+            if not self.is_const(decl.value, classes):
+                raise IllegalConstantExpression(decl.value)
+            self.enforce_access(decl.value)
+            if not self.can_coerce(decl.constType, self.visit(decl.value, classes)):
+                raise TypeMismatchInConstant(ast)
+        else:
+            if decl.varInit and not self.can_coerce(decl.varType, self.visit(decl.varInit, classes)):
+                raise TypeMismatchInStatement(ast)
+            self.enforce_access(decl.varInit)
+
+        classes[cname].append(Symbol(attr_name, typ, is_const))
 
 
     def visitVarDecl(self, ast: VarDecl, stack):
@@ -288,10 +349,8 @@ class StaticChecker(BaseVisitor):
         if self.lookup(varname, stack[0], lambda sym: sym.name):
             raise Redeclared(Variable(), varname)
         self.check_undeclared_class(ast.varType, stack)
-        if ast.varInit:
-            if not self.can_coerce(ast.varType, self.visit(ast.varInit, stack)):
-                raise TypeMismatchInStatement(ast)
-
+        if ast.varInit and not self.can_coerce(ast.varType, self.visit(ast.varInit, stack)):
+            raise TypeMismatchInStatement(ast)
         stack[0].append(Symbol(varname, ast.varType))
 
 
@@ -300,23 +359,17 @@ class StaticChecker(BaseVisitor):
         if self.lookup(constname, stack[0], lambda sym: sym.name):
             raise Redeclared(Constant(), constname)
         self.check_undeclared_class(ast.constType, stack)
-
-        if ast.value:
-            if not self.can_coerce(ast.constType, self.visit(ast.value, stack)):
-                raise TypeMismatchInConstant(ast)
-            
-            if not self.is_const(ast.value, stack):
-                raise IllegalConstantExpression(ast.value)
-        else:
+        if not self.is_const(ast.value, stack):
             raise IllegalConstantExpression(ast.value)
-
+        if not self.can_coerce(ast.constType, self.visit(ast.value, stack)):
+            raise TypeMismatchInConstant(ast)
         stack[0].append(Symbol(constname, ast.constType, True))
 
 
     def visitAssign(self, ast: Assign, stack):
         tr = self.visit(ast.exp, stack)
         tl = self.visit(ast.lhs, stack)
-        
+
         if self.is_const(ast.lhs, stack):
             raise CannotAssignToConstant(ast)
 
@@ -325,7 +378,12 @@ class StaticChecker(BaseVisitor):
         elif not self.can_coerce(tl, tr):
             raise TypeMismatchInStatement(ast)
 
-    
+
+    def visitBlock(self, ast: Block, stack):
+        for stmt in ast.inst:
+            self.visit(stmt, stack)
+
+
     def visitIf(self, ast: If, c):
         typ = self.visit(ast.expr, c)
         if not isinstance(typ, BoolType):
@@ -364,230 +422,60 @@ class StaticChecker(BaseVisitor):
         if not self.is_in_loop:
             raise MustInLoop(ast)
 
-
+    
     def visitReturn(self, ast: Return, stack):
-        explicit_rettype = self.visit(ast.expr, stack) if ast.expr else VoidType()
-        cur_rettype = self.curr_method_sym.mtype.rettype
+        explicit_ret_type = self.visit(ast.expr, stack) if ast.expr else VoidType()
+        explicit_ret_is_const = self.is_const(ast.expr, stack)
+        cur_ret_type = self.curr_method_sym.mtype.rettype
+        cur_ret_is_const = self.curr_method_sym.is_const
 
         if self.has_explicit_return:
-            if not self.can_coerce(cur_rettype, explicit_rettype):
+            if not self.can_coerce(cur_ret_type, explicit_ret_type) or \
+            explicit_ret_is_const != cur_ret_is_const:
                 raise TypeMismatchInStatement(ast)
         else:
             self.has_explicit_return = True
 
-        if type(explicit_rettype) != VoidType and \
-            (self.is_in_main() or self.curr_method_sym.name in ['Constructor', 'Destructor']):
+        if type(explicit_ret_type) != VoidType and \
+        (self.is_in_main() or self.curr_method_sym.name in ['Constructor', 'Destructor']):
             raise TypeMismatchInStatement(ast)
 
-        self.curr_method_sym.mtype.rettype = explicit_rettype
-        return explicit_rettype
+        self.curr_method_sym.mtype.rettype = explicit_ret_type
+        self.curr_method_sym.is_const = explicit_ret_is_const
+
+        return explicit_ret_type
 
 
     def visitCallStmt(self, ast: CallStmt, stack):
-        method_name = ast.method.name
-        is_static = '$' in method_name
-
-        if isinstance(ast.obj, Id):
-            class_name = ast.obj.name
-            # If classname is shadowed by localvar
-            sym = self.lookup_in_local_scopes(class_name, stack)
-            if sym and type(sym.mtype) != ClassType:
-                raise TypeMismatchInStatement(ast)
-            
-            method_sym = self.lookup_method(method_name, ast.obj.name, stack)
-            if not method_sym:
-                raise Undeclared(Method(), method_name)
-
-            if sym:
-                if is_static:
-                    raise IllegalMemberAccess(ast)
-            else:
-                if not is_static:
-                    raise IllegalMemberAccess(ast)
-
-            self.check_args_match_params(ast, method_sym, stack, TypeMismatchInStatement)
-            
-            # Return
-            if not isinstance(method_sym.mtype.rettype, VoidType):
-                raise TypeMismatchInStatement(ast)
-            return method_sym.mtype.rettype
-        elif isinstance(ast.obj, SelfLiteral):
-            if is_static:
-                raise IllegalMemberAccess(ast)
-            # If access an instance inside a static method of vice-versa
-            if self.curr_method_sym:
-                is_in_static_method = '$' in self.curr_method_sym.name or self.is_in_main()
-
-                if not is_static and is_in_static_method:
-                    raise IllegalMemberAccess(ast)
-            
-            class_name = self.curr_class_name
-            method_sym = self.lookup_method(method_name, class_name, stack)
-            if not method_sym:
-                raise Undeclared(Method(), method_name)
-            self.check_args_match_params(ast, method_sym, stack, TypeMismatchInStatement)
-            
-            
-            
-            # Return
-            if not isinstance(method_sym.mtype.rettype, VoidType):
-                raise TypeMismatchInStatement(ast)
-            return method_sym.mtype.rettype
-        else:
-            self.visit(ast.obj, stack)
+        return self.check_method_call(ast, stack)
 
 
-    def visitCallExpr(self, ast: CallExpr, stack): 
-        method_name = ast.method.name
-        is_static = '$' in method_name
-        
-        if isinstance(ast.obj, Id):
-            class_name = ast.obj.name
-            # If classname is shadowed by localvar
-            sym = self.lookup_in_local_scopes(class_name, stack)
-            if sym:
-                if isinstance(sym.mtype, ClassType):
-                    class_name = sym.mtype.classname.name
-                else:
-                    raise TypeMismatchInExpression(ast)
-
-            method_sym = self.lookup_method(method_name, class_name, stack)
-            if not method_sym:
-                raise Undeclared(Method(), method_name)
-            
-            if sym:
-                if is_static:
-                    raise IllegalMemberAccess(ast)
-            else:
-                if not is_static:
-                    raise IllegalMemberAccess(ast)
-
-
-            self.check_args_match_params(ast, method_sym, stack, TypeMismatchInExpression)              
-            # Return
-            if isinstance(method_sym.mtype.rettype, VoidType):
-                raise TypeMismatchInExpression(ast)
-            return method_sym.mtype.rettype
-        elif isinstance(ast.obj, SelfLiteral):
-            # If access an instance inside a static method of vice-versa
-            if self.curr_method_sym:
-                is_in_static_method = '$' in self.curr_method_sym.name or self.is_in_main()
-
-                if not is_static and is_in_static_method:
-                    raise IllegalMemberAccess(ast)
-            
-            # Get current class's name
-            class_name = self.curr_class_name
-            method_sym = self.lookup_method(method_name, class_name, stack)
-            if not method_sym:
-                raise Undeclared(Method(), method_name)
-            
-            if is_static:
-                raise IllegalMemberAccess(ast)
-
-
-            self.check_args_match_params(ast, method_sym, stack, TypeMismatchInExpression)              
-            # Return
-            if isinstance(method_sym.mtype.rettype, VoidType):
-                raise TypeMismatchInExpression(ast)
-                       
-            return method_sym.mtype.rettype
-        else:
-            ret = self.visit(ast.obj, stack)
-            if not isinstance(ret, ClassType):
-                raise TypeMismatchInExpression(ast)
-            
-            classname = ret.classname.name
-            method_sym = self.lookup_method(method_name, classname, stack)
-            if not method_sym:
-                raise Undeclared(Method(), method_name)
-            self.check_args_match_params(ast, method_sym, stack, TypeMismatchInExpression)
-            # Return
-            if isinstance(method_sym.mtype.rettype, VoidType):
-                raise TypeMismatchInExpression(ast)
-            return method_sym.mtype.rettype
+    def visitCallExpr(self, ast: CallExpr, stack):
+        return self.check_method_call(ast, stack)
 
 
     def visitFieldAccess(self, ast: FieldAccess, stack):
-        rettype = VoidType()
-        field = ast.fieldname.name
-        field_is_static = '$' in field
-        
-        if isinstance(ast.obj, Id):
-            class_name = ast.obj.name
-            # If class_name is shadowed by a variable name
-            sym = self.lookup_in_local_scopes(class_name, stack)
-            if sym: 
-                if not isinstance(sym.mtype, ClassType):
-                    raise TypeMismatchInExpression(ast)
-                else:
-                    # This id has the same name as the class name
-                    # and is an instance of a class
-                    class_name = sym.mtype.classname.name
+        return self.check_obj_and_mem_name(ast, stack).mtype
 
-            attr_name = self.lookup_attribute(field, class_name, stack)
-            if not attr_name:
-                raise Undeclared(Attribute(), field)
-            else:
-                rettype = attr_name.mtype
-            # Instance cannot access Static and vice-versa
-            if sym:
-                if field_is_static:
-                    raise IllegalMemberAccess(ast)
-            else:
-                if not field_is_static:
-                    raise IllegalMemberAccess(ast)
-        elif isinstance(ast.obj, SelfLiteral):
-            # If access an instance inside a static method of vice-versa
-            if self.curr_method_sym:
-                is_in_static_method = '$' in self.curr_method_sym.name or self.is_in_main()
 
-                if not field_is_static and is_in_static_method:
-                    raise IllegalMemberAccess(ast)
-            
-            class_name = self.curr_class_name
-            attr_name = self.lookup_attribute(field, class_name, stack)
-            if not attr_name:
-                raise Undeclared(Attribute(), field)
-            else:
-                rettype = attr_name.mtype
-            # Instance cannot access Static and vice-versa
-            if field_is_static:
-                raise IllegalMemberAccess(ast)
-            
-        elif isinstance(ast.obj, FieldAccess):
-            typ = self.visit(ast.obj, stack)
-            if not isinstance(typ, ClassType):
-                raise TypeMismatchInExpression(ast)
-            class_name = ast.obj.fieldname
-            attr_name = self.lookup_attribute(field, class_name, stack)
-            if not attr_name:
-                raise Undeclared(Attribute(), field)
-            else:
-                rettype = attr_name.mtype
-        
-        if self.is_declaring_static and not field_is_static:
-            raise IllegalMemberAccess(ast)
-        
-        return rettype
-
-    # TODO: When declaring must access attribute through self
     def visitId(self, ast: Id, stack):
         if isinstance(stack, list):
+            # Currently in a scope / method
             res = self.lookup_in_local_scopes(ast.name, stack)
             if res:
                 return res.mtype
             # Check if Id is a ClassName
             if ast.name in stack[-1]:
-                return ClassType(Id(ast.name))
+                return NSType(ast.name)
             raise Undeclared(Identifier(), ast.name)
         else:
+            # Currently in class body
             if ast.name in stack:
-                return ClassType(Id(ast.name))
+                return NSType(ast.name)
             # This id is in the attribute decl
-            attr_type = self.lookup_attribute(ast.name, self.curr_class_name, stack)
-            if attr_type:
-                return attr_type
+            attr_sym = self.lookup_attribute(ast.name, self.curr_class_name, stack)
+            if attr_sym:
+                return attr_sym.mtype
             else:
                 raise Undeclared(Attribute(), ast.name)
 
@@ -596,6 +484,9 @@ class StaticChecker(BaseVisitor):
         # typeleft, constleft
         tl = self.visit(ast.left, c)
         tr = self.visit(ast.right, c)
+        if isinstance(tl, NSType): raise Undeclared(Identifier(), tl.cname)
+        if isinstance(tr, NSType): raise Undeclared(Identifier(), tr.cname)
+
         op = ast.op
         if op in ["+", "-", "*", "/", ">", ">=", "<", "<="]:
             not_allowed = (BoolType, ArrayType, StringType, VoidType, ClassType)
@@ -633,21 +524,24 @@ class StaticChecker(BaseVisitor):
 
     def visitUnaryOp(self, ast: UnaryOp, c):
         te = self.visit(ast.body, c)
+        if isinstance(te, NSType): raise Undeclared(Identifier(), te.cname)
+
         if ast.op == "-" and type(te) != IntType:
             raise TypeMismatchInExpression(ast)
         elif ast.op == "!" and type(te) != BoolType:
             raise TypeMismatchInExpression(ast)
         return te
-            
+
 
     def visitNewExpr(self, ast: NewExpr, stack):
         class_name = ast.classname.name
-        self.check_undeclared_class(ClassType(Id(class_name)), stack)
+        self.check_undeclared_class(ClassType(ast.classname), stack)
         constructor = self.lookup_method('Constructor', class_name, stack)
-        self.check_args_match_params(ast, constructor, stack, TypeMismatchInExpression)
-        return ClassType(Id(class_name))
+        self.check_args_match_params(ast, constructor, stack)
+        return ClassType(ast.classname)
 
-
+    # TODO: If cell is mutable then return mutable
+    # TODO: Index must be literal/immutable
     def visitArrayCell(self, ast: ArrayCell, stack):
         # Get type of expr
         typ = self.visit(ast.arr, stack)
@@ -656,11 +550,14 @@ class StaticChecker(BaseVisitor):
         if any(map(lambda idx: type(self.visit(idx, stack)) != IntType, ast.idx)):
             raise TypeMismatchInExpression(ast)
         for _ in ast.idx:
-            typ = typ.eleType
+            if isinstance(typ, ArrayType):
+                typ = typ.eleType
+            else:
+                raise TypeMismatchInExpression(ast)
         return typ
 
 
-    def visitIntLiteral(self, ast: IntLiteral, c): 
+    def visitIntLiteral(self, ast: IntLiteral, c):
         return IntType()
 
 
@@ -678,10 +575,14 @@ class StaticChecker(BaseVisitor):
 
     def visitArrayLiteral(self, ast: ArrayLiteral, stack):
         ele_type = self.visit(ast.value[0], stack) if len(ast.value) else VoidType()
-        if any(type(self.visit(ele, stack)) == FloatType for ele in ast.value) \
-        and all(type(self.visit(ele, stack)) in (IntType, FloatType) for ele in ast.value):
-            ele_type = FloatType()
-        elif any(type(ele_type) != type(self.visit(ele, stack)) for ele in ast.value):
+        try:
+            if ENABLE_ARRAYLIT_COERCE and \
+            any(type(self.visit(ele, stack)) == FloatType for ele in ast.value) and \
+            all(type(self.visit(ele, stack)) in (IntType, FloatType) for ele in ast.value):
+                ele_type = FloatType()
+            elif any(type(ele_type) != type(self.visit(ele, stack)) for ele in ast.value):
+                raise IllegalArrayLiteral(ast)
+        except:
             raise IllegalArrayLiteral(ast)
 
         size = len(ast.value)
