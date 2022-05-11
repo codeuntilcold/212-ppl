@@ -1,5 +1,6 @@
 """
  * @author nhphung
+ * extended by 1910101
 """
 from AST import *
 from Visitor import *
@@ -24,6 +25,7 @@ class NSType:
     def __str__(self):
         return "CName(" + self.cname + ")"
 
+
 class Symbol:
     def __init__(self, name, mtype, is_const = False):
         self.name = name
@@ -43,11 +45,11 @@ class StaticChecker(BaseVisitor):
         self.is_in_loop = False
         self.is_declaring_static = False
         self.has_explicit_constructor = False
+        self.has_explicit_destructor = False
         self.has_explicit_return = False
 
     def check(self):
         return self.visit(self.ast, None)
-
 
     """
             HELPERS
@@ -146,7 +148,6 @@ class StaticChecker(BaseVisitor):
                 # Accessing private attribute
                 else:
                     raise IllegalMemberAccess(ast)
-        
         if isinstance(ast, FieldAccess):
             attr_sym = self.lookup_attribute(mem_name, class_name, stack)
             if attr_sym:
@@ -197,21 +198,7 @@ class StaticChecker(BaseVisitor):
             else:
                 raise Undeclared(Identifier(), value.name)
         elif isinstance(value, FieldAccess):
-            ctype = self.visit(value.obj, stack)
-            if isinstance(ctype, ClassType):
-                dot_sym = self.lookup_attribute(value.fieldname.name, ctype.classname.name, stack)
-                if dot_sym:
-                    return dot_sym.is_const
-                else:
-                    raise Undeclared(Attribute(), value.fieldname.name)
-            elif isinstance(ctype, NSType):
-                dot_sym = self.lookup_attribute(value.fieldname.name, ctype.cname, stack)
-                if dot_sym:
-                    return dot_sym.is_const
-                else:
-                    raise Undeclared(Attribute(), value.fieldname.name)
-            else:
-                raise TypeMismatchInExpression(value)
+            return self.check_obj_and_mem_name(value, stack).is_const
         elif isinstance(value, ArrayCell):
             return self.is_const(value.arr, stack)
         elif isinstance(value, NewExpr):
@@ -274,16 +261,18 @@ class StaticChecker(BaseVisitor):
 
         c[cname] = [
             # Default constructor
-            Symbol("Constructor", MType([], VoidType()))
+            Symbol("Constructor", MType([], VoidType())),
+            Symbol("Destructor", MType([], VoidType()))
         ]
         self.curr_class_name = cname
         self.has_explicit_constructor = False
+        self.has_explicit_destructor = False
         for mem in ast.memlist:
             self.visit(mem, c)
             self.curr_method_sym = None
             self.is_declaring_static = False
 
-    # TODO: Default destructor
+    
     def visitMethodDecl(self, ast: MethodDecl, classes):
         cname = self.curr_class_name
         method_name = ast.name.name
@@ -292,7 +281,8 @@ class StaticChecker(BaseVisitor):
                 if self.has_explicit_constructor:
                     raise Redeclared(Method(), method_name)
             elif method_name == 'Destructor':
-                raise Redeclared(Method(), method_name)
+                if self.has_explicit_destructor:
+                    raise Redeclared(Method(), method_name)
             else:
                 raise Redeclared(Method(), method_name)
 
@@ -308,6 +298,9 @@ class StaticChecker(BaseVisitor):
         if method_name == 'Constructor':
             classes[cname] = list(filter(lambda sym: sym.name != method_name, classes[cname]))
             self.has_explicit_constructor = True
+        if method_name == 'Destructor':
+            classes[cname] = list(filter(lambda sym: sym.name != method_name, classes[cname]))
+            self.has_explicit_destructor = True
 
         classes[cname].append(
             Symbol(method_name, MType([p.varType for p in ast.param], VoidType()))
@@ -388,10 +381,17 @@ class StaticChecker(BaseVisitor):
         typ = self.visit(ast.expr, c)
         if not isinstance(typ, BoolType):
             raise TypeMismatchInStatement(ast)
-        env = [[]] + c
-        self.visit(ast.thenStmt, env)
+        then_env = [[]] + c
+        self.visit(ast.thenStmt, then_env)
         if ast.elseStmt:
-            self.visit(ast.elseStmt, env)
+            try:
+                else_env = [[]] + c
+                self.visit(ast.elseStmt, else_env)
+            except TypeMismatchInStatement as err:
+                if ast.elseStmt == err.stmt:
+                    raise TypeMismatchInStatement(ast)
+                else:
+                    raise err
 
 
     def visitFor(self, ast: For, stack):

@@ -840,7 +840,7 @@ class CheckerSuite(unittest.TestCase):
                 Program::$someStatic = Program;
             }
         }"""
-        expect = "Type Mismatch In Expression: FieldAccess(Id(Program),Id($someStatic))"
+        expect = "Cannot Assign To Constant: AssignStmt(FieldAccess(Id(Program),Id($someStatic)),Id(Program))"
         self.assertTrue(TestChecker.test(input,expect,465))
 
     def test_466(self):
@@ -1136,14 +1136,14 @@ class CheckerSuite(unittest.TestCase):
                 } Elseif (True) {
                     Var b: Int;
                     If (b) {
-                        Return True;
+                        Return;
                     }
                 } Else {
 
                 }
             }
         }"""
-        expect = "Type Mismatch In Statement: If(Id(b),Block([Return(BooleanLit(True))]))"
+        expect = "Type Mismatch In Statement: If(Id(b),Block([Return()]))"
         self.assertTrue(TestChecker.test(input,expect,488))
 
     def test_489(self):
@@ -1260,11 +1260,13 @@ class CheckerSuite(unittest.TestCase):
     def test_494(self):
         input = """
         Class A {
-            Var a: Int;  ## instance attribute of class A ##
+            Var a: Int;
+            Var $a: Int;
         }
         Class B: A {
             foo(){
-                Var x: Int = Self.a;   ## member of class A ##
+                Var A: A = New A();
+                Var sum: Int = A::$a + A.a + Self.a;
             }
         }"""
         expect = "Undeclared Attribute: a"
@@ -1291,18 +1293,19 @@ class CheckerSuite(unittest.TestCase):
 
     def test_496(self):
         input = """
-        Class A {
-            $foo(){}
-        }
         Class Program {
             main(){
-                Var y : A = New A();
-                Var z : Int = 10;
-                y::$foo(); ## 1 ##
-                z::$foo(); ## 2 ##
+                Var b: Boolean;
+                If (True) {}
+                Elseif (b) {}
+                Elseif (1 == 2) {}
+                Elseif ("This" ==. "That") {}
+                Elseif (Null) {}
+                Elseif (!True) {}
+                Else {}
             }
         }"""
-        expect = "Undeclared Class: y"
+        expect = "Type Mismatch In Statement: If(BooleanLit(True),Block([]),If(Id(b),Block([]),If(BinaryOp(==,IntLit(1),IntLit(2)),Block([]),If(BinaryOp(==.,StringLit(This),StringLit(That)),Block([]),If(NullLiteral(),Block([]),If(UnaryOp(!,BooleanLit(True)),Block([]),Block([])))))))"
         self.assertTrue(TestChecker.test(input,expect,496))
 
     def test_497(self):
@@ -1319,11 +1322,30 @@ class CheckerSuite(unittest.TestCase):
         self.assertTrue(TestChecker.test(input,expect,497))
 
     def test_498(self):
-        input = """Class Program {}"""
-        expect = "No Entry Point"
+        input = """Class Program {
+            Destructor() {}
+            Destructor() {}
+        }"""
+        expect = "Redeclared Method: Destructor"
         self.assertTrue(TestChecker.test(input,expect,498))
 
     def test_499(self):
-        input = """Class Program {}"""
-        expect = "No Entry Point"
+        input = """Class A {
+            Var a: Float = 10.0 * 2 + 1 - 5;
+            Var check: Boolean = False && (1 == 2);
+            method(){
+                If(True){
+                    Var a: Int;
+                    Foreach(a In 1 .. 100 By 2){
+                        a = a % 2;
+                        If(a == 1){
+                            Break;
+                        }
+                    }
+                } Elseif(Self.check){
+                    a = 1;
+                }
+            }
+        }"""
+        expect = "Undeclared Identifier: a"
         self.assertTrue(TestChecker.test(input,expect,499))
