@@ -1,21 +1,61 @@
-
-# io::putInt():
-#     // allocate stack
-#     // load var in
-#     // call function to print
-#     // return to flow
-
-# main:
-#     // accumulator set to 5
-#     // accumulator add 10
-#     // save accumulator to parameter
-#     // call io.putInt
-#     // terminate main
-
-
 # from .MIPSMachineCode import MIPSCode
 from AST import *
+from StaticCheck import Symbol
 from .MIPSEmitter import MIPSEmitter
+
+class StringType(Type):
+    def __str__(self):
+        return "StringType"
+    def accept(self, v, param):
+        return None
+
+class ArrayPointerType(Type):
+    def __init__(self, ctype):
+        #cname: String
+        self.eleType = ctype
+    def __str__(self):
+        return "ArrayPointerType({0})".format(str(self.eleType))
+    def accept(self, v, param):
+        return None
+
+class ClassType(Type):
+    def __init__(self,cname):
+        self.cname = cname
+    def __str__(self):
+        return "Class({0})".format(str(self.cname))
+    def accept(self, v, param):
+        return None
+
+class SubBody():
+    def __init__(self, frame, sym):
+        #frame: Frame
+        #sym: List[Symbol]
+        self.frame = frame
+        self.sym = sym
+
+class Access():
+    def __init__(self, frame, sym, isLeft, isFirst):
+        #frame: Frame
+        #sym: List[Symbol]
+        #isLeft: Boolean
+        #isFirst: Boolean
+        self.frame = frame
+        self.sym = sym
+        self.isLeft = isLeft
+        self.isFirst = isFirst
+
+class Val(ABC):
+    pass
+
+class Index(Val):
+    def __init__(self, value):
+        #value: Int
+        self.value = value
+
+class CName(Val):
+    def __init__(self, value):
+        #value: String
+        self.value = value
 
 class MIPSCodeGenerator:
 
@@ -34,45 +74,6 @@ class MIPSCodeGenerator:
         global_codegen.visit(ast, None)
 
 
-class Register:
-    ZERO    = '$zero'
-    AT      = '$at'
-    V0      = '$v0'
-    V1      = '$v1'
-    A0      = '$a0'
-    A1      = '$a1'
-    A2      = '$a2'
-    A3      = '$a3'
-
-    T0      = '$t0'
-    T1      = '$t1'
-    T2      = '$t2'
-    T3      = '$t3'
-    T4      = '$t4'
-    T5      = '$t5'
-    T6      = '$t6'
-    T7      = '$t7'
-    T8      = '$t8'
-    T9      = '$t9'
-
-    S0      = '$s0'
-    S1      = '$s1'
-    S2      = '$s2'
-    S3      = '$s3'
-    S4      = '$s4'
-    S5      = '$s5'
-    S6      = '$s6'
-    S7      = '$s7'
-
-    K0      = '$k0'
-    K1      = '$k1'
-
-    GP = '$gp'
-    SP = '$sp'
-    FP = '$fp'
-    RA = '$ra'
-
-
 class MIPSCodeGenVisitor:
     
     def __init__(self, astTree, env, dir_):
@@ -83,7 +84,7 @@ class MIPSCodeGenVisitor:
         self.astTree = astTree
         self.env = env
         self.path = dir_
-        self.className = "BKOOLClass"
+        self.className = "D96"
         self.emit = MIPSEmitter(self.path + "/" + self.className + ".asm")
 
     def visit(self,ast,param):
@@ -91,48 +92,94 @@ class MIPSCodeGenVisitor:
 
 
     def visitProgram(self, ast: Program, c):
-        self.emit.printout(self.emit.emitPROLOG())
+        # self.emit.printout(self.emit.emitPROLOG())
 
         for x in ast.decl:
             self.visit(x, c)
         
         self.emit.emitEPILOG()
 
+
     def visitClassDecl(self, ast: ClassDecl, o):
         for x in ast.memlist:
             self.visit(x, o)
 
+
     def visitMethodDecl(self, ast: MethodDecl, o):
+        self.emit.printout(self.emit.emitLABEL(ast.name.name))
+        
+        n_var = len(ast.param) + sum(type(stmt) in (VarDecl, ConstDecl) for stmt in ast.body.inst)        
+        scope = SubBody(None, [])
+
+        self.emit.printout(self.emit.emitUPONENTRANCE(n_var + 1))
         for x in ast.body.inst:
-            self.visit(x, o)
+            self.visit(x, scope)
+        self.emit.printout(self.emit.emitUPONEXIT(n_var + 1))
+        
     
+    def visitVarDecl(self, ast: VarDecl, o):
+        # o: SubBody
+        o.sym
+        idx = len(o.sym)
+
+        # First only consider initialized variables in main method
+        if ast.varInit:
+            code, _ = self.visit(ast.varInit, o)
+            self.emit.printout(code)
+            self.emit.printout(self.emit.emitSTOREINDEX(idx))
+
+        o.sym.append(Symbol(ast.variable.name, ast.varType, Index(idx)))
+
+
+    def visitAssign(self, ast: Assign, o):
+        rc, _ = self.visit(ast.exp, o)
+        self.emit.printout(rc)
+        for sym in o.sym:
+            if ast.lhs.name == sym.name:
+                index = sym.value.value
+                self.emit.printout(self.emit.emitSTOREINDEX(index))
+        
 
     def visitCallStmt(self, ast: CallStmt, o):
         for x in ast.param:
-            is_float = type(self.visit(x, o)) == FloatType
+            code, typ = self.visit(x, o)
+            self.emit.printout(code)
+            is_float = type(typ) == FloatType
     
         self.emit.printout(self.emit.emitPRINTFLOAT() if is_float else self.emit.emitPRINTINT())
         
+
     def visitBinaryOp(self, ast: BinaryOp, o):
         op = ast.op
+        lc, lt = self.visit(ast.left, o)
+        rc, rt = self.visit(ast.right, o)
 
-        if op == '+':
-            ltype = self.visit(ast.left, o)
-            rtype = self.visit(ast.right, o)
-
-            if type(ltype) == FloatType or type(rtype) == FloatType:
-                if type(ltype) != type(rtype):
-                    self.emit.printout(self.emit.emitMERGEFLOATINT())
-                return FloatType()
+        if op in '+-':
+            if type(lt) == FloatType or type(rt) == FloatType:
+                code = lc + self.emit.emitPUSHACC() + rc + self.emit.emitADDOP(op)
+                if type(lt) != type(rt):
+                    code += self.emit.emitMERGEFLOATINT()
+                return code, FloatType()
             else:
-                return IntType()
+                code = lc + self.emit.emitPUSHACC() + rc + self.emit.emitADDOP(op)
+                return code, IntType()
+        elif op in '*/':
+            code = lc + self.emit.emitPUSHACC() + rc + self.emit.emitMULOP(op)
+            return code, IntType()
+        elif op in ['+.']:
+            pass
+
+
+    def visitId(self, ast: Id, o):
+        for sym in o.sym:
+            if ast.name == sym.name:
+                idx = sym.value.value
+        return self.emit.emitLOADINDEX(idx), IntType()
 
 
     def visitIntLiteral(self, ast: IntLiteral, o):
-        self.emit.printout(self.emit.emitADDINT(ast.value))
-        return IntType()
+        return self.emit.emitLOADACC(ast.value), IntType()
 
 
     def visitFloatLiteral(self, ast: FloatLiteral, o):
-        self.emit.printout(self.emit.emitADDFLOAT(str(ast.value)))
-        return FloatType()
+        return self.emit.emitLOADACCF(str(ast.value)), FloatType()

@@ -214,8 +214,8 @@ class TestMIPSCodeGen:
         
         ### Open solutions/*.txt to check
         dest = open(os.path.join(SOL_DIR, str(num) + ".txt"),"r")
-        line = dest.read()
-        return line.__contains__(expect)
+        line = dest.read().split("\n")[2]
+        return line == expect
 
     @staticmethod
     def check(soldir,asttree,num):
@@ -228,8 +228,7 @@ class TestMIPSCodeGen:
         
             codeGen.gen(asttree, path)
 
-            subprocess.run("java -jar " + MARS_JAR + " " + path + "/BKOOLClass.asm", shell=True, stdout=f, timeout=10)
-                            #java -jar ./external/Mars4_5.jar ./test/solutions/500/BKOOLClass.asm
+            subprocess.run("java -jar " + MARS_JAR + " " + path + "/D96.asm", shell=True, stdout=f, timeout=10)
 
         except StaticError as e:
             f.write(str(e))

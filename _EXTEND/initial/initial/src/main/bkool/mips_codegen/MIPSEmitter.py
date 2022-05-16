@@ -41,6 +41,9 @@ RA      = '$ra'
 F1      = '$f1'
 F12     = '$f12'
 
+ACC     = A0
+ACCF    = F1
+
 class MIPSEmitter:
     def __init__(self, filename):
         self.filename = filename
@@ -51,15 +54,70 @@ class MIPSEmitter:
     def __float_to_hex__(f):
         return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
-    def emitMOCKPROGRAM(self):
+    def emitLABEL(self, label):
+        return label + ":\n"
+
+    def emitPOPSTACK(self):
+        return self.mars.emitADDI(SP, SP, 4)
+
+    def emitUPONENTRANCE(self, framesize):
         result = list()
-        result.append(self.emitADDINT(20))
-        result.append(self.emitADDINT(30))
-        result.append(self.emitPRINTINT())
+        result.append(self.mars.emitADDI(SP, SP, -(framesize * 4)))
+        result.append(self.mars.emitSW(FP, SP, framesize * 4))
+        result.append(self.mars.emitMOVE(FP, SP))
+        return ''.join(result) + '\n'
+
+    def emitUPONEXIT(self, framesize):
+        result = list()
+        result.append(self.mars.emitMOVE(SP, FP))
+        result.append(self.mars.emitLW(FP, SP, framesize * 4))
+        result.append(self.mars.emitADDI(SP, SP, framesize * 4))
+        return '\n' + ''.join(result) + '\n'
+
+    def emitSTOREINDEX(self, idx):        
+        result = list()
+        result.append(self.mars.emitSW(ACC, FP, (idx + 1) * 4))
         return ''.join(result)
 
-    def emitADDINT(self, in_):
-        return self.mars.emitADDI(A0, A0, in_)
+    def emitLOADINDEX(self, idx):
+        return self.mars.emitLW(ACC, FP, (idx + 1) * 4)
+
+    def emitLOADACC(self, in_):
+        return self.mars.emitLI(ACC, int(in_))
+
+    def emitLOADACCF(self, in_):
+        result = list()
+        hex_repr = MIPSEmitter.__float_to_hex__(float(in_))
+        result.append(self.mars.emitLI(T1, hex_repr))
+        result.append(self.mars.emitMTC1(T1, F1))
+        result.append(self.mars.emitADDS(F12, F12, F1))
+        return ''.join(result)
+
+    def emitPUSHACC(self):
+        result = list()
+        result.append(self.mars.emitSW(ACC, SP, 0))
+        result.append(self.mars.emitADDI(SP, SP, -4))
+        return ''.join(result)
+
+    def emitADDOP(self, op):
+        result = list()
+        result.append(self.mars.emitLW(T1, SP, 4))
+        if op == '+':
+            result.append(self.mars.emitADD(ACC, T1, ACC))
+        elif op == '-':
+            result.append(self.mars.emitSUB(ACC, T1, ACC))
+        result.append(self.emitPOPSTACK())
+        return ''.join(result)
+    
+    def emitMULOP(self, op):
+        result = list()
+        result.append(self.mars.emitLW(T1, SP, 4))
+        if op == '*':
+            result.append(self.mars.emitMULT(ACC, T1))
+        elif op == '/':
+            result.append(self.mars.emitDIV(ACC, T1))
+        result.append(self.emitPOPSTACK())
+        return ''.join(result)
 
     def emitADDFLOAT(self, in_):
         result = list()
@@ -71,7 +129,7 @@ class MIPSEmitter:
 
     def emitMERGEFLOATINT(self):
         result = list()
-        result.append(self.mars.emitMTC1(A0, F1))
+        result.append(self.mars.emitMTC1(ACC, F1))
         result.append(self.mars.emitCVTSW(F1, F1))
         result.append(self.mars.emitADDS(F12, F12, F1))
         return ''.join(result)
