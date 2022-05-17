@@ -214,8 +214,9 @@ class TestMIPSCodeGen:
         
         ### Open solutions/*.txt to check
         dest = open(os.path.join(SOL_DIR, str(num) + ".txt"),"r")
-        line = dest.read().split("\n")[2]
-        return line == expect
+        lines = dest.read().split("\n")
+        output = '\n'.join(lines[2:-1])
+        return output == expect
 
     @staticmethod
     def check(soldir,asttree,num):

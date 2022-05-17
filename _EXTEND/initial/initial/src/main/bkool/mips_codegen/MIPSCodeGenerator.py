@@ -1,6 +1,6 @@
 # from .MIPSMachineCode import MIPSCode
 from AST import *
-from StaticCheck import Symbol
+from StaticCheck import MType, Symbol
 from .MIPSEmitter import MIPSEmitter
 
 class StringType(Type):
@@ -60,11 +60,12 @@ class CName(Val):
 class MIPSCodeGenerator:
 
     def init(self):
+        self.libName = 'io'
         return [
-            # Symbol("getInt", MType(list(), IntType()), CName(self.libName)),
-            # Symbol("putInt", MType([IntType()], VoidType()), CName(self.libName)),
-            # Symbol("putIntLn", MType([IntType()], VoidType()), CName(self.libName)),
-            # Symbol("putFloat", MType([FloatType()], VoidType()), CName(self.libName)),
+            Symbol("getInt", MType(list(), IntType()), CName(self.libName)),
+            Symbol("putInt", MType([IntType()], VoidType()), CName(self.libName)),
+            Symbol("putIntLn", MType([IntType()], VoidType()), CName(self.libName)),
+            Symbol("putFloat", MType([FloatType()], VoidType()), CName(self.libName)),
         ]
 
     def gen(self, ast, dir_):
@@ -111,10 +112,10 @@ class MIPSCodeGenVisitor:
         n_var = len(ast.param) + sum(type(stmt) in (VarDecl, ConstDecl) for stmt in ast.body.inst)        
         scope = SubBody(None, [])
 
-        self.emit.printout(self.emit.emitUPONENTRANCE(n_var + 1))
+        self.emit.printout(self.emit.emitFRAMEALLOC(n_var + 1))
         for x in ast.body.inst:
             self.visit(x, scope)
-        self.emit.printout(self.emit.emitUPONEXIT(n_var + 1))
+        self.emit.printout(self.emit.emitFRAMERESET(n_var + 1))
         
     
     def visitVarDecl(self, ast: VarDecl, o):
@@ -124,11 +125,23 @@ class MIPSCodeGenVisitor:
 
         # First only consider initialized variables in main method
         if ast.varInit:
-            code, _ = self.visit(ast.varInit, o)
+            code, typ = self.visit(ast.varInit, o)
             self.emit.printout(code)
-            self.emit.printout(self.emit.emitSTOREINDEX(idx))
+            self.emit.printout(self.emit.emitSTOREINDEX(idx, typ))
 
         o.sym.append(Symbol(ast.variable.name, ast.varType, Index(idx)))
+
+    def visitConstDecl(self, ast: ConstDecl, o):
+        # o: SubBody
+        o.sym
+        idx = len(o.sym)
+
+        # First only consider initialized variables in main method
+        code, typ = self.visit(ast.value, o)
+        self.emit.printout(code)
+        self.emit.printout(self.emit.emitSTOREINDEX(idx, typ))
+
+        o.sym.append(Symbol(ast.constant.name, ast.constType, Index(idx)))
 
 
     def visitAssign(self, ast: Assign, o):
@@ -137,16 +150,23 @@ class MIPSCodeGenVisitor:
         for sym in o.sym:
             if ast.lhs.name == sym.name:
                 index = sym.value.value
-                self.emit.printout(self.emit.emitSTOREINDEX(index))
+                typ = sym.mtype
+                self.emit.printout(self.emit.emitSTOREINDEX(index, typ))
         
 
     def visitCallStmt(self, ast: CallStmt, o):
         for x in ast.param:
-            code, typ = self.visit(x, o)
+            code, _ = self.visit(x, o)
             self.emit.printout(code)
-            is_float = type(typ) == FloatType
     
-        self.emit.printout(self.emit.emitPRINTFLOAT() if is_float else self.emit.emitPRINTINT())
+        if ast.method.name == "putInt":
+            self.emit.printout(self.emit.emitPUTINT())
+        elif ast.method.name == "putIntLn":
+            self.emit.printout(self.emit.emitPUTINTLN())
+        elif ast.method.name == "putFloat":
+            self.emit.printout(self.emit.emitPUTFLOAT())
+        elif ast.method.name == "putFloatLn":
+            self.emit.printout(self.emit.emitPUTFLOATLN())
         
 
     def visitBinaryOp(self, ast: BinaryOp, o):
@@ -154,27 +174,40 @@ class MIPSCodeGenVisitor:
         lc, lt = self.visit(ast.left, o)
         rc, rt = self.visit(ast.right, o)
 
-        if op in '+-':
+        code = lc + self.emit.emitPUSHACC(lt) + rc
+
+        if op in '+-*/%':
+            rettype = IntType()
             if type(lt) == FloatType or type(rt) == FloatType:
-                code = lc + self.emit.emitPUSHACC() + rc + self.emit.emitADDOP(op)
-                if type(lt) != type(rt):
-                    code += self.emit.emitMERGEFLOATINT()
-                return code, FloatType()
-            else:
-                code = lc + self.emit.emitPUSHACC() + rc + self.emit.emitADDOP(op)
-                return code, IntType()
-        elif op in '*/':
-            code = lc + self.emit.emitPUSHACC() + rc + self.emit.emitMULOP(op)
-            return code, IntType()
-        elif op in ['+.']:
+                code += self.emit.emitI2F() if type(rt) == IntType else ''
+                code += self.emit.emitI2FSTACK() if type(lt) == IntType else ''
+                rettype = FloatType()
+            code += self.emit.emitADDOP(op, rettype) if op in '+-' else self.emit.emitMULOP(op, rettype)
+            return code, rettype
+        elif op in ['||', '&&']:
+            pass
+        elif op in ['==', '!=']:
+            pass
+        elif op in ['>', '>=', '<', '<=']:
+            pass
+        elif op == '+.':
+            pass
+        elif op == '==.':
             pass
 
+    def visitUnaryOp(self, ast: UnaryOp, o):
+        code, typ = self.visit(ast.body, o)
+        if ast.op == '-':
+            return code + self.emit.emitNEG(typ), typ
+        else:
+            return code + self.emit.emitNOT(), BoolType()
 
     def visitId(self, ast: Id, o):
         for sym in o.sym:
             if ast.name == sym.name:
                 idx = sym.value.value
-        return self.emit.emitLOADINDEX(idx), IntType()
+                typ = sym.mtype
+        return self.emit.emitLOADINDEX(idx, typ), typ
 
 
     def visitIntLiteral(self, ast: IntLiteral, o):

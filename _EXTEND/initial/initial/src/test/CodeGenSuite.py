@@ -81,10 +81,10 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_505(self):
         input = """Class Program {
             main() {
-                io.putFloat(20.5 + 79.5);
+                io.putFloat(1.5 + 3.5);
             }
         }"""
-        expect = "100.0"
+        expect = "5.0"
         self.assertTrue(TestCodeGen.test(input,expect,505))
 
     def test_506(self):
@@ -94,7 +94,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             }
         }
         """
-        expect = "10"
+        expect = "10\n"
         self.assertTrue(TestCodeGen.test(input,expect,506))
 
     def test_507(self):
@@ -118,20 +118,36 @@ class CheckCodeGenSuite(unittest.TestCase):
                 x = 10;
                 y = 2;
                 io.putInt(x - (2 + y));
+                io.putInt(x + x - y + x);
             }
         }"""
-        expect = "6"
+        expect = "628"
         self.assertTrue(TestCodeGen.test(input,expect,508))
 
-    # def test_509(self):
-    #     input =
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,509))
+    def test_509(self):
+        input = """Class Program {
+            main() {
+                Var a: Float = 10.0;
+                io.putFloat(50 - a - 10);
+            }
+        }
+        """
+        expect = "30.0"
+        self.assertTrue(TestCodeGen.test(input,expect,509))
 
-    # def test_510(self):
-    #     input =
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,510))
+    def test_510(self):
+        input = """Class Program {
+            main() {
+                Var a: Int = 7;
+                Var b: Float = 5.0;
+
+                io.putIntLn(-5 * 7);
+                io.putFloatLn(a * b);
+                ip.putFloat(a / b);
+            }
+        }"""
+        expect = "-35\n35.0\n1.4"
+        self.assertTrue(TestCodeGen.test(input,expect,510))
 
     # def test_511(self):
     #     input =

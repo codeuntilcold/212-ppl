@@ -29,6 +29,12 @@ class MIPSCode:
     def emitADDIU(self, rt, rs, imm):
         return MIPSCode.INDENT + "addiu\t" + ", ".join([rt, rs, str(imm)]) + MIPSCode.END
 
+    def emitNEG(self, rd, rs):
+        return MIPSCode.INDENT + "neg\t\t" + ", ".join([rd, rs]) +  MIPSCode.END
+
+    def emitMUL(self, rd, rs, rt):
+        return MIPSCode.INDENT + "mul\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
+
     def emitMULT(self, rs, rt):
         return MIPSCode.INDENT + "mult\t" + ", ".join([rs, rt]) + MIPSCode.END
 
@@ -58,6 +64,9 @@ class MIPSCode:
 
     def emitXOR(self, rd, rs, rt):
         return MIPSCode.INDENT + "xor\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
+
+    def emitNOT(self, rd, rs):
+        return MIPSCode.INDENT + "not\t\t" + ", ".join([rd, rs]) +  MIPSCode.END
 
     def emitANDI(self, rt, rs, imm):
         return MIPSCode.INDENT + "andi\t" + ", ".join([rt, rs, str(imm)]) + MIPSCode.END
@@ -161,8 +170,29 @@ class MIPSCode:
     def emitMTC1(self, r, fr):
         return MIPSCode.INDENT + "mtc1\t" + ", ".join([r, fr]) + MIPSCode.END
 
+    def emitLWC1(self, fr, r, imm):
+        return MIPSCode.INDENT + "lwc1\t" + fr + ", " + str(imm) + "(" + r + ")" + MIPSCode.END
+
+    def emitSWC1(self, fr, r, imm):
+        return MIPSCode.INDENT + "swc1\t" + fr + ", " + str(imm) + "(" + r + ")" + MIPSCode.END
+
     def emitCVTSW(self, fr1, fr2):
         return MIPSCode.INDENT + "cvt.s.w\t" + ", ".join([fr1, fr2]) + MIPSCode.END
+    
+    def emitCVTWS(self, fr1, fr2):
+        return MIPSCode.INDENT + "cvt.w.s\t" + ", ".join([fr1, fr2]) + MIPSCode.END
 
     def emitADDS(self, frd, fr1, fr2):
         return MIPSCode.INDENT + "add.s\t" + ", ".join([frd, fr1, fr2]) + MIPSCode.END
+
+    def emitSUBS(self, frd, fr1, fr2):
+        return MIPSCode.INDENT + "sub.s\t" + ", ".join([frd, fr1, fr2]) + MIPSCode.END
+
+    def emitNEGS(self, frd, fr1):
+        return MIPSCode.INDENT + "neg.s\t" + ", ".join([frd, fr1]) + MIPSCode.END
+
+    def emitMULS(self, frd, fr1, fr2):
+        return MIPSCode.INDENT + "mul.s\t" + ", ".join([frd, fr1, fr2]) + MIPSCode.END
+
+    def emitDIVS(self, frd, fr1, fr2):
+        return MIPSCode.INDENT + "div.s\t" + ", ".join([frd, fr1, fr2]) + MIPSCode.END
