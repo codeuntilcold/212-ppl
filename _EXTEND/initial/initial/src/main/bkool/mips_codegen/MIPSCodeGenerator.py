@@ -88,39 +88,76 @@ class MIPSCodeGenVisitor:
         self.className = "D96"
         self.emit = MIPSEmitter(self.path + "/" + self.className + ".asm")
 
+        self.currentClassName = None
+        self.currentMethodSym = None
+        self.methodSyms = list()
+
+
     def visit(self,ast,param):
         return ast.accept(self,param)
 
+    """
+            HELPERS
+    """
 
+
+    """
+            VISITORS
+    """
     def visitProgram(self, ast: Program, c):
-        # self.emit.printout(self.emit.emitPROLOG())
-
         for x in ast.decl:
             self.visit(x, c)
         
-        self.emit.emitEPILOG()
+        self.emit.emitSOURCECODE()
 
 
     def visitClassDecl(self, ast: ClassDecl, o):
+        self.currentClassName = ast.classname.name
         for x in ast.memlist:
             self.visit(x, o)
 
 
     def visitMethodDecl(self, ast: MethodDecl, o):
-        self.emit.printout(self.emit.emitLABEL(ast.name.name))
+        self.methodSyms.append(Symbol(ast.name.name, MType([], VoidType()), CName(self.currentClassName)))
+        self.currentMethodSym = self.methodSyms[-1]
+
+
+        self.emit.printout(self.emit.emitLABEL(self.currentClassName + '_m_' + ast.name.name))
         
         n_var = len(ast.param) + sum(type(stmt) in (VarDecl, ConstDecl) for stmt in ast.body.inst)        
-        scope = SubBody(None, [])
 
-        self.emit.printout(self.emit.emitFRAMEALLOC(n_var + 1))
+        self.emit.printout(self.emit.emitFRAMEALLOC(n_var + 2))
+
+        scope = SubBody(None, [])
+        for x in ast.param:
+            self.visit(x, scope)
         for x in ast.body.inst:
             self.visit(x, scope)
-        self.emit.printout(self.emit.emitFRAMERESET(n_var + 1))
+        
+        self.emit.printout(self.emit.emitLABEL('\treturn_' + self.currentClassName + '_m_' + ast.name.name))
+        self.emit.printout(self.emit.emitFRAMERESET(n_var + 2))
+
+        if ast.name.name == 'main' and self.currentClassName == 'Program':
+            pass
+        else:
+            self.emit.printout(self.emit.emitJRA())
+    
+
+    def visitAttributeDecl(self, ast: AttributeDecl, o):
+        if isinstance(ast.kind, Static):
+            if isinstance(ast.decl, VarDecl):
+                name = self.currentClassName + '_a_' + ast.decl.variable.name
+                typ = ast.decl.varType
+                val = ast.decl.varInit
+            else:
+                name = self.currentClassName + '_a_' + ast.decl.constant.name
+                typ = ast.decl.constType
+                val = ast.decl.value
+            self.emit.printvar(self.emit.emitATTRIBUTE(name, typ, val))
         
     
-    def visitVarDecl(self, ast: VarDecl, o):
+    def visitVarDecl(self, ast: VarDecl, o: SubBody):
         # o: SubBody
-        o.sym
         idx = len(o.sym)
 
         # First only consider initialized variables in main method
@@ -131,9 +168,8 @@ class MIPSCodeGenVisitor:
 
         o.sym.append(Symbol(ast.variable.name, ast.varType, Index(idx)))
 
-    def visitConstDecl(self, ast: ConstDecl, o):
+    def visitConstDecl(self, ast: ConstDecl, o: SubBody):
         # o: SubBody
-        o.sym
         idx = len(o.sym)
 
         # First only consider initialized variables in main method
@@ -148,26 +184,76 @@ class MIPSCodeGenVisitor:
         rc, _ = self.visit(ast.exp, o)
         self.emit.printout(rc)
         for sym in o.sym:
-            if ast.lhs.name == sym.name:
+            if isinstance(ast.lhs, Id) and ast.lhs.name == sym.name:
                 index = sym.value.value
                 typ = sym.mtype
                 self.emit.printout(self.emit.emitSTOREINDEX(index, typ))
-        
+
+
+    def visitReturn(self, ast: Return, o):
+        if ast.expr == NullLiteral():
+            pass
+        elif ast.expr:
+            code, typ = self.visit(ast.expr, o)
+            self.currentMethodSym.mtype.rettype = typ
+            self.emit.printout(code)
+            self.emit.printout(self.emit.emitLOADRETURN(typ))
+            self.emit.printout(self.emit.emitJ('return_' + self.currentClassName + '_m_' + self.currentMethodSym.name))
+    
+
+    def visitFieldAccess(self, ast: FieldAccess, o):
+        pass
+
 
     def visitCallStmt(self, ast: CallStmt, o):
-        for x in ast.param:
-            code, _ = self.visit(x, o)
-            self.emit.printout(code)
+        # Actually calling method other than printing
+        result = list()
+        idx = 0
+        for arg in ast.param:
+            # Pass-by-value, result is in the accumulator
+            code, typ = self.visit(arg, o)
+            # Pre-allocate params before calling method
+            result.append(code)
+            result.append(self.emit.emitSTOREPARAM(idx, typ))
+            idx += 1
     
         if ast.method.name == "putInt":
-            self.emit.printout(self.emit.emitPUTINT())
+            result.append(self.emit.emitPUTINT())
         elif ast.method.name == "putIntLn":
-            self.emit.printout(self.emit.emitPUTINTLN())
+            result.append(self.emit.emitPUTINTLN())
         elif ast.method.name == "putFloat":
-            self.emit.printout(self.emit.emitPUTFLOAT())
+            result.append(self.emit.emitPUTFLOAT())
         elif ast.method.name == "putFloatLn":
-            self.emit.printout(self.emit.emitPUTFLOATLN())
-        
+            result.append(self.emit.emitPUTFLOATLN())
+        else:
+            result.append(self.emit.emitJAL(self.currentClassName + '_m_' + ast.method.name))
+
+        self.emit.printout(''.join(result))
+
+
+    def visitCallExpr(self, ast: CallExpr, o):
+        result = list()
+        idx = 0
+        for arg in ast.param:
+            # Pass-by-value, result is in the accumulator
+            code, typ = self.visit(arg, o)
+            # Pre-allocate params before calling method
+            result.append(code)
+            result.append(self.emit.emitSTOREPARAM(idx, typ))
+            idx += 1
+
+        result.append(self.emit.emitJAL(self.currentClassName + '_m_' + ast.method.name))
+        for sym in self.methodSyms:
+            if sym.name == ast.method.name:
+                return ''.join(result), sym.mtype.rettype
+
+
+    def visitIf(self, ast: If, o):
+        pass
+        ast.expr
+        ast.thenStmt
+        ast.elseStmt
+
 
     def visitBinaryOp(self, ast: BinaryOp, o):
         op = ast.op
@@ -207,7 +293,7 @@ class MIPSCodeGenVisitor:
             if ast.name == sym.name:
                 idx = sym.value.value
                 typ = sym.mtype
-        return self.emit.emitLOADINDEX(idx, typ), typ
+                return self.emit.emitLOADINDEX(idx, typ), typ
 
 
     def visitIntLiteral(self, ast: IntLiteral, o):

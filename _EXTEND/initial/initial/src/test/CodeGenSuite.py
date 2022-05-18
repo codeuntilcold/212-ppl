@@ -149,25 +149,73 @@ class CheckCodeGenSuite(unittest.TestCase):
         expect = "-35\n35.0\n1.4"
         self.assertTrue(TestCodeGen.test(input,expect,510))
 
-    # def test_511(self):
-    #     input =
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,511))
+    def test_511(self):
+        input = """Class Program {
+            no_param_four() { 
+                io.putIntLn(26);
+                Return 4; 
+            }
+            main() {
+                Var x: Int = 10;
+                io.putIntLn(x);
+                x = Self.no_param_four();
+                io.putInt(x);
+            }
+        }"""
+        expect = "10\n26\n4"
+        self.assertTrue(TestCodeGen.test(input,expect,511))
 
-    # def test_512(self):
-    #     input =
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,512))
+    def test_512(self):
+        input = """Class Program {
+            f(i: Int) {
+                Var j: Int = 12;
+                Return i + 4;
+            }
+            main() {
+                Var x, y: Int = 10, 2;
+                x = Self.f(x + y);
+                io.putInt(x);
+            }
+        }
+        """
+        expect = "16"
+        self.assertTrue(TestCodeGen.test(input,expect,512))
 
-    # def test_513(self):
-    #     input =
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,513))
+    def test_513(self):
+        input = """
+        Class Program {
+            sumWithBias(a, b, c: Int) {
+                Var bias: Int = -10;
+                io.putIntLn(a);
+                io.putIntLn(b);
+                io.putIntLn(c);
+                Return a + b + c + bias;
+            }
+            main() {
+                Var x: Int = Self.sumWithBias(20, 30, 40) + 10;
+                io.putInt(x);
+            }
+        }"""
+        expect = "20\n30\n40\n90"
+        self.assertTrue(TestCodeGen.test(input,expect,513))
 
-    # def test_514(self):
-    #     input =
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,514))
+    def test_514(self):
+        input = """
+        Class Program {
+            times_f(a, b, c: Float) {
+                io.putFloatLn(a);
+                io.putFloatLn(b);
+                io.putFloatLn(c);
+                Return a * b * c;
+            }
+            main() {
+                Var x, y: Float = 10.0, 2.0;
+                x = Self.times_f(x, y, 1.0);
+                io.putFloat(x);
+            }
+        }"""
+        expect = "10.0\n2.0\n1.0\n20.0"
+        self.assertTrue(TestCodeGen.test(input,expect,514))
 
     # def test_515(self):
     #     input =
@@ -185,8 +233,22 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     self.assertTrue(TestCodeGen.test(input,expect,517))
 
     # def test_518(self):
-    #     input =
-    #     expect = ""
+    #     input = """
+    #     Class Program {
+    #         sumTo(i: Int) {
+    #             If (i == 0) {
+    #                 Return 0;
+    #             }
+    #             Else {
+    #                 Return i + Self.sumTo(i - 1);
+    #             }
+    #         }
+    #         main() {
+    #             Var x: Int = Self.sumTo(10);
+    #             io.putInt(x);
+    #         }
+    #     }"""
+    #     expect = "55"
     #     self.assertTrue(TestCodeGen.test(input,expect,518))
 
     # def test_519(self):

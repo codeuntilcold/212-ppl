@@ -40,16 +40,36 @@ SP      = '$sp'
 FP      = '$fp'
 RA      = '$ra'
 
+F0      = '$f0'
 F1      = '$f1'
 F12     = '$f12'
 
-ACC     = A0
-ACCF    = F12
+ACC     = S0
+TMP     = T1
+ACCF    = F0
+TMPF    = F1
+
+"""
+        FRAME WHEN CALLING METHOD
+        ra
+        old fp
+        <- current fp
+        (self)              \\
+        params               >>  increase in index
+        local vars          //
+        <- current sp
+
+
+"""
 
 class MIPSEmitter:
     def __init__(self, filename):
         self.filename = filename
-        self.buff = list()
+        self.datasec = ['\t.data\n']
+        self.textsec = [
+            '\t.text\n',
+            '\tjal Program_m_main\n'
+        ]
         self.mars = MIPSCode()
 
     @staticmethod
@@ -57,10 +77,16 @@ class MIPSEmitter:
         return hex(struct.unpack('<I', struct.pack('<f', f))[0])
 
     """
+                GLOBAL ATTRIBUTE
+    """
+    def emitATTRIBUTE(self, name, typ, val):
+        return self.datasec.append(name + ":\t\t" + typ + "\t\t" + val + "\n")
+    
+    """
                 METHOD RELATED
     """
     def emitLABEL(self, label):
-        return label + ":\n"
+        return "\n" + label + ":\n"
 
     def emitPOPSTACK(self):
         return self.mars.emitADDI(SP, SP, 4)
@@ -74,28 +100,59 @@ class MIPSEmitter:
     def emitFRAMEALLOC(self, framesize):
         result = list()
         result.append(self.mars.emitADDI(SP, SP, -(framesize * 4)))
-        result.append(self.mars.emitSW(FP, SP, framesize * 4))
-        result.append(self.mars.emitMOVE(FP, SP))
+        result.append(self.mars.emitSW(RA, SP, framesize * 4))
+        result.append(self.mars.emitSW(FP, SP, (framesize - 1) * 4))
+        # result.append(self.mars.emitMOVE(FP, SP))
+        result.append(self.mars.emitADDI(FP, SP, (framesize - 2) * 4))
         return ''.join(result) + '\n'
 
     def emitFRAMERESET(self, framesize):
         result = list()
-        result.append(self.mars.emitMOVE(SP, FP))
-        result.append(self.mars.emitLW(FP, SP, framesize * 4))
+        # result.append(self.mars.emitMOVE(SP, FP))
+        result.append(self.mars.emitADDI(SP, FP, -(framesize - 2) * 4))
+        result.append(self.mars.emitLW(FP, SP, (framesize - 1) * 4))
+        result.append(self.mars.emitLW(RA, SP, framesize * 4))
         result.append(self.mars.emitADDI(SP, SP, framesize * 4))
         return '\n' + ''.join(result) + '\n'
 
-    def emitSTOREINDEX(self, idx, intype):        
+    """
+            STATEMENTS RELATED
+    """
+    def emitJ(self, label):
+        return self.mars.emitJ(label)
+
+    def emitJAL(self, label):
+        return self.mars.emitJAL(label)
+
+    def emitJRA(self):
+        return self.mars.emitJR(RA)
+
+    def emitLOADRETURN(self, intype):
         if type(intype) == IntType:
-            return self.mars.emitSW(ACC, FP, (idx + 1) * 4)
+            return self.mars.emitADDI(V0, ACC, 0)
         elif type(intype) == FloatType:
-            return self.mars.emitSWC1(ACCF, FP, (idx + 1) * 4)
+            return self.mars.emitMFC1(V0, ACCF)
 
     def emitLOADINDEX(self, idx, intype):
         if type(intype) == IntType:
-            return self.mars.emitLW(ACC, FP, (idx + 1) * 4)
+            return self.mars.emitLW(ACC, FP, -idx * 4)
         elif type(intype) == FloatType:
-            return self.mars.emitLWC1(ACCF, FP, (idx + 1) * 4)
+            return self.mars.emitLWC1(ACCF, FP, -idx * 4)
+
+    def emitSTOREINDEX(self, idx, intype):        
+        if type(intype) == IntType:
+            return self.mars.emitSW(ACC, FP, -idx * 4)
+        elif type(intype) == FloatType:
+            return self.mars.emitSWC1(ACCF, FP, -idx * 4)
+
+    # Pre-allocate param value before calling FRAMEALLOC
+    def emitSTOREPARAM(self, idx, intype):
+        # Two words for $ra and $fp
+        OFFSET = 2
+        if type(intype) == IntType:
+            return self.mars.emitSW(ACC, SP, -(idx + OFFSET) * 4)
+        elif type(intype) == FloatType:
+            return self.mars.emitSWC1(ACCF, SP, -(idx + OFFSET) * 4)
 
 
     """
@@ -119,8 +176,8 @@ class MIPSEmitter:
     def emitLOADACCF(self, value):
         result = list()
         hex_repr = MIPSEmitter.__float_to_hex__(float(value))
-        result.append(self.mars.emitLI(T1, hex_repr))
-        result.append(self.mars.emitMTC1(T1, ACCF))
+        result.append(self.mars.emitLI(TMP, hex_repr))
+        result.append(self.mars.emitMTC1(TMP, ACCF))
         return ''.join(result)
 
     """
@@ -129,21 +186,21 @@ class MIPSEmitter:
     def emitADDOP(self, op, intype):
         result = list()
         if type(intype) == IntType:
-            result.append(self.mars.emitLW(T1, SP, 4))
+            result.append(self.mars.emitLW(TMP, SP, 4))
         if type(intype) == FloatType:
-            result.append(self.mars.emitLWC1(F1, SP, 4))
+            result.append(self.mars.emitLWC1(TMPF, SP, 4))
         
         if op == '+':
             result.append(
-                self.mars.emitADD(ACC, T1, ACC)
+                self.mars.emitADD(ACC, TMP, ACC)
                 if type(intype) == IntType else
-                self.mars.emitADDS(ACCF, F1, ACCF)
+                self.mars.emitADDS(ACCF, TMPF, ACCF)
             )
         elif op == '-':
             result.append(
-                self.mars.emitSUB(ACC, T1, ACC)
+                self.mars.emitSUB(ACC, TMP, ACC)
                 if type(intype) == IntType else
-                self.mars.emitSUBS(ACCF, F1, ACCF)
+                self.mars.emitSUBS(ACCF, TMPF, ACCF)
             )
         result.append(self.emitPOPSTACK())
         return ''.join(result)
@@ -151,27 +208,27 @@ class MIPSEmitter:
     def emitMULOP(self, op, intype):
         result = list()
         if type(intype) == IntType:
-            result.append(self.mars.emitLW(T1, SP, 4))
+            result.append(self.mars.emitLW(TMP, SP, 4))
         if type(intype) == FloatType:
-            result.append(self.mars.emitLWC1(F1, SP, 4))
+            result.append(self.mars.emitLWC1(TMPF, SP, 4))
         
         if op == '*':
             result.append(
-                self.mars.emitMUL(ACC, T1, ACC)
+                self.mars.emitMUL(ACC, TMP, ACC)
                 if type(intype) == IntType else
-                self.mars.emitMULS(ACCF, F1, ACCF)
+                self.mars.emitMULS(ACCF, TMPF, ACCF)
             )
         elif op == '/':
             result.append(
-                self.mars.emitDIV(ACC, T1, ACC)
+                self.mars.emitDIV(ACC, TMP, ACC)
                 if type(intype) == IntType else
-                self.mars.emitDIVS(ACCF, F1, ACCF)
+                self.mars.emitDIVS(ACCF, TMPF, ACCF)
             )
         else:
             result.append(
-                self.mars.emitDIV(ACC, T1, ACC)
+                self.mars.emitDIV(ACC, TMP, ACC)
                 if type(intype) == IntType else
-                self.mars.emitDIVS(ACCF, F1, ACCF)
+                self.mars.emitDIVS(ACCF, TMPF, ACCF)
             )
         result.append(self.emitPOPSTACK())
         return ''.join(result)
@@ -179,16 +236,16 @@ class MIPSEmitter:
     # Move Int's TOS to Float's TOS
     def emitI2F(self):
         result = list()
-        result.append(self.mars.emitMTC1(ACC, F1))
-        result.append(self.mars.emitCVTSW(ACCF, F1))
+        result.append(self.mars.emitMTC1(ACC, TMPF))
+        result.append(self.mars.emitCVTSW(ACCF, TMPF))
         return ''.join(result)
 
     # Move Int's TOS to Float's TOS
     def emitI2FSTACK(self):
         result = list()
-        result.append(self.mars.emitLWC1(F1, SP, 4))
-        result.append(self.mars.emitCVTSW(F1, F1))
-        result.append(self.mars.emitSWC1(F1, SP, 4))
+        result.append(self.mars.emitLWC1(TMPF, SP, 4))
+        result.append(self.mars.emitCVTSW(TMPF, TMPF))
+        result.append(self.mars.emitSWC1(TMPF, SP, 4))
         return ''.join(result)
 
     def emitNOT(self):
@@ -204,12 +261,14 @@ class MIPSEmitter:
     """
     def emitPUTINT(self):
         result = list()
+        result.append(self.mars.emitADDI(A0, ACC, 0))
         result.append(self.mars.emitLI(V0, 1))
         result.append(self.mars.emitSYSCALL())
         return ''.join(result)
 
     def emitPUTINTLN(self):
         result = list()
+        result.append(self.mars.emitADDI(A0, ACC, 0))
         result.append(self.mars.emitLI(V0, 1))
         result.append(self.mars.emitSYSCALL())
         result.append(self.mars.emitLI(A0, 10)) # LF
@@ -219,12 +278,14 @@ class MIPSEmitter:
 
     def emitPUTFLOAT(self):
         result = list()
+        result.append(self.mars.emitMOVS(F12, ACCF))
         result.append(self.mars.emitLI(V0, 2))
         result.append(self.mars.emitSYSCALL())
         return ''.join(result)
 
     def emitPUTFLOATLN(self):
         result = list()
+        result.append(self.mars.emitMOVS(F12, ACCF))
         result.append(self.mars.emitLI(V0, 2))
         result.append(self.mars.emitSYSCALL())
         result.append(self.mars.emitLI(A0, 10)) # LF
@@ -232,18 +293,17 @@ class MIPSEmitter:
         result.append(self.mars.emitSYSCALL())
         return ''.join(result)
 
-    def emitPROLOG(self):
-        result = list()
-        result.append(self.mars.emitTEXT())
-        return ''.join(result)
-
-    def emitEPILOG(self):
+    def emitSOURCECODE(self):
         file = open(self.filename, "w")
-        file.write(''.join(self.buff))
+        file.write(''.join(self.datasec))
+        file.write(''.join(self.textsec))
         file.close()
 
+    def printvar(self, in_):
+        self.datasec.append(in_)
+
     def printout(self, in_):
-        self.buff.append(in_)
+        self.textsec.append(in_)
     
     def clearBuff(self):
-        self.buff.clear()
+        self.textsec.clear()

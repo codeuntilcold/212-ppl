@@ -170,6 +170,9 @@ class MIPSCode:
     def emitMTC1(self, r, fr):
         return MIPSCode.INDENT + "mtc1\t" + ", ".join([r, fr]) + MIPSCode.END
 
+    def emitMFC1(self, r, fr):
+        return MIPSCode.INDENT + "mfc1\t" + ", ".join([r, fr]) + MIPSCode.END
+
     def emitLWC1(self, fr, r, imm):
         return MIPSCode.INDENT + "lwc1\t" + fr + ", " + str(imm) + "(" + r + ")" + MIPSCode.END
 
@@ -196,3 +199,6 @@ class MIPSCode:
 
     def emitDIVS(self, frd, fr1, fr2):
         return MIPSCode.INDENT + "div.s\t" + ", ".join([frd, fr1, fr2]) + MIPSCode.END
+
+    def emitMOVS(self, frd, fr):
+        return MIPSCode.INDENT + "mov.s\t" + ", ".join([frd, fr]) + MIPSCode.END
