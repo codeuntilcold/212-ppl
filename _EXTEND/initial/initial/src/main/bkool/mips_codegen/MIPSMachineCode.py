@@ -119,11 +119,11 @@ class MIPSCode:
     def emitJAL(self, addr):
         return MIPSCode.INDENT + "jal\t\t" + addr + MIPSCode.END
 
-    def emitBEQ(self, rt, rs, imm):
-        return MIPSCode.INDENT + "beq\t\t" + ", ".join([rt, rs, str(imm)]) + MIPSCode.END
+    def emitBEQ(self, rt, rs, addr):
+        return MIPSCode.INDENT + "beq\t\t" + ", ".join([rt, rs, str(addr)]) + MIPSCode.END
 
-    def emitBNE(self, rt, rs, imm):
-        return MIPSCode.INDENT + "bne\t\t" + ", ".join([rt, rs, str(imm)]) + MIPSCode.END
+    def emitBNE(self, rt, rs, addr):
+        return MIPSCode.INDENT + "bne\t\t" + ", ".join([rt, rs, str(addr)]) + MIPSCode.END
 
     def emitSLT(self, rd, rs, rt):
         return MIPSCode.INDENT + "slt\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
@@ -136,6 +136,23 @@ class MIPSCode:
 
     def emitSLTIU(self, rt, rs, imm):
         return MIPSCode.INDENT + "sltiu\t" + ", ".join([rt, rs, str(imm)]) + MIPSCode.END
+
+    def emitSLE(self, rd, rs, rt):
+        return MIPSCode.INDENT + "sle\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
+
+    def emitSGT(self, rd, rs, rt):
+        return MIPSCode.INDENT + "sgt\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
+
+    def emitSGE(self, rd, rs, rt):
+        return MIPSCode.INDENT + "sge\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
+
+
+    def emitSEQ(self, rd, rs, rt):
+        return MIPSCode.INDENT + "seq\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
+
+    def emitSNE(self, rd, rs, rt):
+        return MIPSCode.INDENT + "sne\t\t" + ", ".join([rd, rs, rt]) +  MIPSCode.END
+
 
     def emitBEQ(self, rx, ry, imm):
         return MIPSCode.INDENT + "beq\t\t" + ", ".join([rx, ry, str(imm)]) +  MIPSCode.END
@@ -202,3 +219,12 @@ class MIPSCode:
 
     def emitMOVS(self, frd, fr):
         return MIPSCode.INDENT + "mov.s\t" + ", ".join([frd, fr]) + MIPSCode.END
+
+    def emitCLES(self, fr1, fr2):
+        return MIPSCode.INDENT + "c.le.s\t" + ", ".join([fr1, fr2]) + MIPSCode.END
+
+    def emitCLTS(self, fr1, fr2):
+        return MIPSCode.INDENT + "c.lt.s\t" + ", ".join([fr1, fr2]) + MIPSCode.END
+
+    def emitCEQS(self, fr1, fr2):
+        return MIPSCode.INDENT + "c.eq.s\t" + ", ".join([fr1, fr2]) + MIPSCode.END

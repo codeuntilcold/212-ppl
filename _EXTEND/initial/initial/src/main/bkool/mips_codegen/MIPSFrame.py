@@ -1,12 +1,12 @@
 from Utils import *
 
 class Frame():
-    def __init__(self, name, returnType):
+    def __init__(self):#, name, returnType):
         #name: String
         #returnType: Type
 
-        self.name = name
-        self.returnType = returnType
+        # self.name = name
+        # self.returnType = returnType
         self.currentLabel = 0
         self.currOpStackSize = 0
         self.maxOpStackSize = 0

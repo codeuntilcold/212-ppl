@@ -1,6 +1,6 @@
 import struct
 
-from AST import FloatType, IntType
+from AST import FloatType, IntType, StringType, Type
 from .MIPSMachineCode import MIPSCode
 
 ZERO    = '$zero'
@@ -102,13 +102,11 @@ class MIPSEmitter:
         result.append(self.mars.emitADDI(SP, SP, -(framesize * 4)))
         result.append(self.mars.emitSW(RA, SP, framesize * 4))
         result.append(self.mars.emitSW(FP, SP, (framesize - 1) * 4))
-        # result.append(self.mars.emitMOVE(FP, SP))
         result.append(self.mars.emitADDI(FP, SP, (framesize - 2) * 4))
         return ''.join(result) + '\n'
 
     def emitFRAMERESET(self, framesize):
         result = list()
-        # result.append(self.mars.emitMOVE(SP, FP))
         result.append(self.mars.emitADDI(SP, FP, -(framesize - 2) * 4))
         result.append(self.mars.emitLW(FP, SP, (framesize - 1) * 4))
         result.append(self.mars.emitLW(RA, SP, framesize * 4))
@@ -132,18 +130,24 @@ class MIPSEmitter:
             return self.mars.emitADDI(V0, ACC, 0)
         elif type(intype) == FloatType:
             return self.mars.emitMFC1(V0, ACCF)
+        else: return "Not implemented\n"
+
+    def emitIFFALSE(self, label):
+        return self.mars.emitBEQ(ACC, ZERO, label)
 
     def emitLOADINDEX(self, idx, intype):
         if type(intype) == IntType:
             return self.mars.emitLW(ACC, FP, -idx * 4)
         elif type(intype) == FloatType:
             return self.mars.emitLWC1(ACCF, FP, -idx * 4)
+        else: return "Not implemented\n"
 
     def emitSTOREINDEX(self, idx, intype):        
         if type(intype) == IntType:
             return self.mars.emitSW(ACC, FP, -idx * 4)
         elif type(intype) == FloatType:
             return self.mars.emitSWC1(ACCF, FP, -idx * 4)
+        else: return "Not implemented\n"
 
     # Pre-allocate param value before calling FRAMEALLOC
     def emitSTOREPARAM(self, idx, intype):
@@ -153,6 +157,7 @@ class MIPSEmitter:
             return self.mars.emitSW(ACC, SP, -(idx + OFFSET) * 4)
         elif type(intype) == FloatType:
             return self.mars.emitSWC1(ACCF, SP, -(idx + OFFSET) * 4)
+        else: return "Not implemented\n"
 
 
     """
@@ -163,6 +168,7 @@ class MIPSEmitter:
             return self.mars.emitLI(ACC, int(value))
         elif type(intype) == FloatType:
             return self.emitLOADACCF(value)
+        else: return "Not implemented\n"
 
     def emitPUSHACC(self, intype):
         result = list()
@@ -171,6 +177,8 @@ class MIPSEmitter:
         elif type(intype) == FloatType:
             result.append(self.mars.emitSWC1(ACCF, SP, 0))
             result.append(self.mars.emitADDI(SP, SP, -4))
+        elif type(intype) == StringType:
+            result.append("Not implemented\n")
         return ''.join(result)
 
     def emitLOADACCF(self, value):
@@ -179,6 +187,9 @@ class MIPSEmitter:
         result.append(self.mars.emitLI(TMP, hex_repr))
         result.append(self.mars.emitMTC1(TMP, ACCF))
         return ''.join(result)
+
+    def emitLOADSTACKTOACC(self):
+        return self.mars.emitLW(ACC, SP, 4)
 
     """
             OPERATORS
@@ -255,6 +266,49 @@ class MIPSEmitter:
         return self.mars.emitNEG(ACC, ACC) \
             if type(intype) == IntType else \
             self.mars.emitNEGS(ACCF, ACCF)
+    
+    def emitSEQ(self):
+        result = list()
+        result.append(self.mars.emitLW(TMP, SP, 4))
+        result.append(self.mars.emitSEQ(ACC, ACC, TMP))
+        result.append(self.emitPOPSTACK())
+        return ''.join(result)
+
+    def emitSNE(self):
+        result = list()
+        result.append(self.mars.emitLW(TMP, SP, 4))
+        result.append(self.mars.emitSNE(ACC, ACC, TMP))
+        result.append(self.emitPOPSTACK())
+        return ''.join(result)
+
+    def emitBOOLOP(self, op):
+        result = list()
+        result.append(self.mars.emitLW(TMP, SP, 4))
+        if op == '||':
+            result.append(self.mars.emitOR(ACC, TMP, ACC))
+        elif op == '&&':
+            result.append(self.mars.emitAND(ACC, TMP, ACC))
+        result.append(self.emitPOPSTACK())
+        return ''.join(result)
+
+    def emitRELOP(self, op, intype):
+        result = list()
+        if type(intype) == IntType:
+            result.append(self.mars.emitLW(TMP, SP, 4))
+            if op == '>': result.append(self.mars.emitSGT(ACC, TMP, ACC))
+            if op == '>=': result.append(self.mars.emitSGE(ACC, TMP, ACC))
+            if op == '<': result.append(self.mars.emitSLT(ACC, TMP, ACC))
+            if op == '<=': result.append(self.mars.emitSLE(ACC, TMP, ACC))
+        elif type(intype) == FloatType:
+            result.append(self.mars.emitLWC1(TMPF, SP, 4))
+            if op == '>': result.append(self.mars.emitCLES(ACCF, TMPF))
+            if op == '>=': result.append(self.mars.emitCLTS(ACCF, TMPF))
+            if op == '<': result.append(self.mars.emitCLTS(TMPF, ACCF))
+            if op == '<=': result.append(self.mars.emitCLES(TMPF, ACCF))
+        else: return "Not implemented\n"
+        
+        result.append(self.emitPOPSTACK())
+        return ''.join(result)
 
     """
                 BUILT-IN METHODS
@@ -295,8 +349,16 @@ class MIPSEmitter:
 
     def emitSOURCECODE(self):
         file = open(self.filename, "w")
-        file.write(''.join(self.datasec))
-        file.write(''.join(self.textsec))
+        try:
+            file.write(''.join(self.datasec))
+            file.write(''.join(self.textsec))
+        except TypeError as err:
+            print(err)
+            for line in self.textsec:
+                if line:
+                    print(line, end='')
+                else:
+                    print("None")
         file.close()
 
     def printvar(self, in_):
