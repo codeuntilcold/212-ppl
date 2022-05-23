@@ -143,7 +143,7 @@ class CheckCodeGenSuite(unittest.TestCase):
 
                 io.putIntLn(-5 * 7);
                 io.putFloatLn(a * b);
-                ip.putFloat(a / b);
+                io.putFloat(a / b);
             }
         }"""
         expect = "-35\n35.0\n1.4"
@@ -434,135 +434,430 @@ class CheckCodeGenSuite(unittest.TestCase):
         expect = "15"
         self.assertTrue(TestCodeGen.test(input,expect,527))
 
-    def test_528(self):
+    # def test_528(self):
+    #     input = """Class Program {
+    #         main() {
+    #             Var a: String = "You are amazing";
+    #             io.putString(a);
+    #         }
+    #     }"""
+    #     expect = "You are amazing"
+    #     self.assertTrue(TestCodeGen.test(input,expect,528))
+
+    # def test_529(self):
+    #     input = """Class Program {
+    #         main() {
+    #             Var a: String = "You are amazing";
+    #             a = a +. ", put up the work!";
+    #             io.putString(a);
+    #         }
+    #     }"""
+    #     expect = "You are amazing, put up the work!"
+    #     self.assertTrue(TestCodeGen.test(input,expect,529))
+
+    # def test_530(self):
+    #     input = """Class Program {
+    #         main() {
+    #             Var x: Boolean = "You" ==. "You";
+    #             If (x) {
+    #                 Var y: Int = 5 + 2;
+    #                 io.putInt(y);
+    #             }
+    #             Else {
+    #                 Var z: Int = 7 + 5;
+    #                 io.putInt(z);
+    #             }
+    #         }
+    #     }"""
+    #     expect = "12"
+    #     self.assertTrue(TestCodeGen.test(input,expect,530))
+
+    def test_531(self):
         input = """Class Program {
+            Val $PI: Float = 3.14;
+            Val $2PI: Float = 6.28;
             main() {
-                Var a: String = "You are amazing";
-                io.putString(a);
+                Var radius: Int = 5;
+                Var circum: Float = radius * Program::$2PI;
+                io.putFloat(circum);
             }
         }"""
-        expect = "You are amazing"
-        self.assertTrue(TestCodeGen.test(input,expect,528))
+        expect = "31.400002"
+        self.assertTrue(TestCodeGen.test(input,expect,531))
 
-    def test_529(self):
+    def test_532(self):
         input = """Class Program {
+            Val $PI: Float = 3.14;
+            Val $2PI: Float = 2 * Program::$PI;
             main() {
-                Var a: String = "You are amazing";
-                a = a +. ", put up the work!";
-                io.putString(a);
+                Var radius: Int = 5;
+                Var circum: Float = radius * Program::$2PI;
+                io.putFloat(circum);
             }
         }"""
-        expect = "You are amazing, put up the work!"
-        self.assertTrue(TestCodeGen.test(input,expect,529))
+        expect = "31.400002"
+        self.assertTrue(TestCodeGen.test(input,expect,532))
 
-    def test_530(self):
+    def test_533(self):
+        input = """Class Pi {
+            Val $value: Float = 3.14;
+        }
+        Class Program {
+            Val $PI: Float = Pi::$value;
+            main() {
+                Var radius: Int = 5;
+                Var area: Float = radius * radius * Program::$PI;
+                io.putFloat(area);
+            }
+        }"""
+        expect = "78.5"
+        self.assertTrue(TestCodeGen.test(input,expect,533))
+
+    def test_534(self):
+        input = """Class Pi {
+            $value() {
+                Return 3.14;
+            }
+        }
+        Class Program {
+            main() {
+                Var radius: Int = 5;
+                Var area: Float = radius * radius * Pi::$value();
+                io.putFloat(area);
+            }
+        }"""
+        expect = "78.5"
+        self.assertTrue(TestCodeGen.test(input,expect,534))
+
+    def test_535(self):
+        input = """Class Pi {
+            Val $PI: Float = 3.14;
+            $value() {
+                Return Pi::$PI;
+            }
+        }
+        Class Program {
+            main() {
+                Var radius: Int = 5;
+                Var area: Float = radius * radius * Pi::$value();
+                io.putFloat(area);
+            }
+        }"""
+        expect = "78.5"
+        self.assertTrue(TestCodeGen.test(input,expect,535))
+
+    def test_536(self):
         input = """Class Program {
             main() {
-                Var x: Boolean = "You" ==. "You";
-                If (x) {
-                    Var y: Int = 5 + 2;
-                    io.putInt(y);
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        io.putInt(i);
+                    }
+                    Else {
+                        Break;
+                    }
                 }
-                Else {
-                    Var z: Int = 7 + 5;
-                    io.putInt(z);
+            }
+        }"""
+        expect = "012345"
+        self.assertTrue(TestCodeGen.test(input,expect,536))
+
+    def test_537(self):
+        input = """Class Program {
+            main() {
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        Continue;
+                    }
+                    Else {
+                        io.putInt(i);
+                    }
                 }
             }
         }"""
-        expect = "12"
-        self.assertTrue(TestCodeGen.test(input,expect,530))
+        expect = "6789"
+        self.assertTrue(TestCodeGen.test(input,expect,537))
 
-    # def test_531(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,531))
+    def test_538(self):
+        input = """Class Program {
+            main() {
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        Break;
+                        io.putInt(i);
+                    }
+                    Else {
+                        io.putInt(i);
+                    }
+                }
+            }
+        }"""
+        expect = ""
+        self.assertTrue(TestCodeGen.test(input,expect,538))
 
-    # def test_532(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,532))
+    def test_539(self):
+        input = """Class Program {
+            main() {
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        If (i % 2 == 0) {
+                            io.putInt(i);
+                        }
+                        Else {
+                            Continue;
+                        }
+                        io.putInt(i);
+                    }
+                    Else {
+                        Break;
+                    }
+                }
+            }
+        }"""
+        expect = "002244"
+        self.assertTrue(TestCodeGen.test(input,expect,539))
 
-    # def test_533(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,533))
+    def test_540(self):
+        input = """
+        Class Integer {
+            Var value: Int;
+        }
+        Class Program {
+            main() {
+                Var a: Integer = New Integer();
+                io.putIntLn(a.value);
+                a.value = 540;
+                io.putInt(a.value);
+            }
+        }"""
+        expect = "0\n540"
+        self.assertTrue(TestCodeGen.test(input,expect,540))
 
-    # def test_534(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,534))
+    def test_541(self):
+        input = """Class Integer {
+            Var value: Int;
+            Var $numOfInt: Int = 0;
+        }
+        Class Program {
+            main() {
+                Var a: Integer = New Integer();
+                io.putIntLn(a.value);
+                io.putIntLn(Integer::$numOfInt);
+                
+                a.value = 540;
+                Integer::$numOfInt = Integer::$numOfInt + 1;
+                io.putIntLn(a.value);
+                io.putIntLn(Integer::$numOfInt);
+            }
+        }"""
+        expect = "0\n0\n540\n1\n"
+        self.assertTrue(TestCodeGen.test(input,expect,541))
 
-    # def test_535(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,535))
+    def test_542(self):
+        input = """Class Rect {
+            Var length, width: Int;
+        }
+        Class Program {
+            main() {
+                Var a: Rect = New Rect();
+                io.putIntLn(a.length);
+                io.putIntLn(a.width);
+                
+                a.length = 540;
+                a.width = a.width + 1;
+                io.putIntLn(a.length);
+                io.putIntLn(a.width);
+            }
+        }"""
+        expect = "0\n0\n540\n1\n"
+        self.assertTrue(TestCodeGen.test(input,expect,542))
 
-    # def test_536(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,536))
+    def test_543(self):
+        input = """
+        Class Square {
+            Var size: Int;
+        }
+        Class Rect {
+            Var length, width: Int;
+        }
+        Class Program {
+            main() {
+                Var a: Rect = New Rect();
+                a.length = 30;
+                a.width = 20;
+                io.putIntLn(a.length);
+                io.putIntLn(a.width);
+                
+                Var s: Square = New Square();
+                s.size = 50;
+                io.putIntLn(s.size);
+            }
+        }"""
+        expect = "30\n20\n50\n"
+        self.assertTrue(TestCodeGen.test(input,expect,543))
 
-    # def test_537(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,537))
+    def test_544(self):
+        input = """
+        Class Square {
+            Var length: Int;
+            area() {
+                Return Self.length * Self.length;
+            }
+        }
+        Class Rect {
+            Var length, width: Int;
+            area() {
+                Return Self.length * Self.width;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Rect = New Rect();
+                a.length = 30;
+                a.width = 20;
+                io.putIntLn(a.area());
+            }
+        }"""
+        expect = "600\n"
+        self.assertTrue(TestCodeGen.test(input,expect,544))
 
-    # def test_538(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,538))
+    def test_545(self):
+        input = """
+        Class Square {
+            Var length: Int;
+            area() {
+                Return Self.length * Self.length;
+            }
+        }
+        Class Rect {
+            Var length, width: Int;
+            area() {
+                Return Self.length * Self.width;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Rect = New Rect();
+                a.length = 30;
+                a.width = 20;
+                io.putIntLn(a.area());
+                
+                Var s: Square = New Square();
+                s.length = 50;
+                io.putIntLn(s.area());
+            }
+        }"""
+        expect = "600\n2500\n"
+        self.assertTrue(TestCodeGen.test(input,expect,545))
 
-    # def test_539(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,539))
+    def test_546(self):
+        input = """
+        Class Square {
+            Var length: Float;
+            area() {
+                Return Self.length * Self.length;
+            }
+        }
+        Class Rect {
+            Var length, width: Float;
+            area() {
+                Return Self.length * Self.width;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Rect = New Rect();
+                a.length = 30.0;
+                a.width = 20.0;
+                io.putFloatLn(a.area());
+                
+                Var s: Square = New Square();
+                s.length = 50.0;
+                io.putFloatLn(s.area());
+            }
+        }"""
+        expect = "600.0\n2500.0\n"
+        self.assertTrue(TestCodeGen.test(input,expect,546))
 
-    # def test_540(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,540))
+    def test_547(self):
+        input = """Class Square {
+            Var length: Int;
+            area() {
+                Return Self.length * Self.length;
+            }
+        }
+        Class Rect {
+            Var length, width: Int;
+            area() {
+                Return Self.length * Self.width;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Rect;
+                a = New Rect();
+                a.length = 30;
+                a.width = 20;
+                io.putIntLn(a.area());
+                
+                Var s: Square = New Square();
+                s.length = 50;
+                io.putIntLn(s.area());
+            }
+        }"""
+        expect = "600\n2500\n"
+        self.assertTrue(TestCodeGen.test(input,expect,547))
 
-    # def test_541(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,541))
+    def test_548(self):
+        input = """
+        Class Rect {
+            Var length, width: Int;
+            setl(l: Int) {
+                Self.length = l;
+            }
+            setw(w: Int) {
+                Self.width = w;
+            }
+            area() {
+                Return Self.length * Self.width;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Rect = New Rect();
+                a.setl(30);
+                io.putIntLn(a.length);
+                a.setw(20);
+                io.putIntLn(a.width);
+            }
+        }"""
+        expect = "30\n20\n"
+        self.assertTrue(TestCodeGen.test(input,expect,548))
 
-    # def test_542(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,542))
-
-    # def test_543(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,543))
-
-    # def test_544(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,544))
-
-    # def test_545(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,545))
-
-    # def test_546(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,546))
-
-    # def test_547(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,547))
-
-    # def test_548(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,548))
-
-    # def test_549(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,549))
+    def test_549(self):
+        input = """Class Rect {
+            Var length, width: Int;
+            setl(l: Int) {
+                Self.length = l;
+            }
+            setw(w: Int) {
+                Self.width = w;
+            }
+            area() {
+                Return Self.length * Self.width;
+            }
+        }
+        Class Program {
+            main() {
+                Var a: Rect = New Rect();
+                a.setl(30);
+                a.setw(20);
+                io.putIntLn(a.area());
+            }
+        }"""
+        expect = "600\n"
+        self.assertTrue(TestCodeGen.test(input,expect,549))

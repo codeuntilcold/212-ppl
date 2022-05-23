@@ -89,6 +89,13 @@ class MIPSCode:
     def emitLW(self, rt, rs, imm):
         return MIPSCode.INDENT + "lw\t\t" + rt + ", " + str(imm) + "(" + rs + ")" + MIPSCode.END
 
+    # For addr
+    def emitADDRLW(self, rt, addr):
+        return MIPSCode.INDENT + "lw\t\t" + ", ".join([rt, addr]) + MIPSCode.END
+
+    def emitADDRSW(self, rt, addr):
+        return MIPSCode.INDENT + "sw\t\t" + ", ".join([rt, addr]) + MIPSCode.END
+
     def emitLH(self, rt, rs, imm):
         return MIPSCode.INDENT + "lh\t\t" + rt + ", " + str(imm) + "(" + rs + ")" + MIPSCode.END
 
@@ -228,3 +235,9 @@ class MIPSCode:
 
     def emitCEQS(self, fr1, fr2):
         return MIPSCode.INDENT + "c.eq.s\t" + ", ".join([fr1, fr2]) + MIPSCode.END
+
+    def emitLS(self, fr, addr):
+        return MIPSCode.INDENT + "l.s\t" + ", ".join([fr, addr]) + MIPSCode.END
+
+    def emitSS(self, fr, addr):
+        return MIPSCode.INDENT + "s.s\t" + ", ".join([fr, addr]) + MIPSCode.END

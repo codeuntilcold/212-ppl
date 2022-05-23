@@ -12,18 +12,9 @@ class StringType(Type):
 
 class ArrayPointerType(Type):
     def __init__(self, ctype):
-        #cname: String
         self.eleType = ctype
     def __str__(self):
         return "ArrayPointerType({0})".format(str(self.eleType))
-    def accept(self, v, param):
-        return None
-
-class ClassType(Type):
-    def __init__(self,cname):
-        self.cname = cname
-    def __str__(self):
-        return "Class({0})".format(str(self.cname))
     def accept(self, v, param):
         return None
 
@@ -92,6 +83,8 @@ class MIPSCodeGenVisitor:
         self.currentClassName = None
         self.currentMethodSym = None
         self.methodSyms = list()
+        self.attributeSyms = list()
+        self.classes = dict()
 
 
     def visit(self,ast,param):
@@ -100,7 +93,7 @@ class MIPSCodeGenVisitor:
     """
             HELPERS
     """
-
+    
 
     """
             VISITORS
@@ -108,12 +101,12 @@ class MIPSCodeGenVisitor:
     def visitProgram(self, ast: Program, c):
         for x in ast.decl:
             self.visit(x, c)
-        
         self.emit.emitSOURCECODE()
 
 
     def visitClassDecl(self, ast: ClassDecl, o):
         self.currentClassName = ast.classname.name
+        self.classes[self.currentClassName] = {}
         frame = Frame()
         for x in ast.memlist:
             self.visit(x, frame)
@@ -122,9 +115,10 @@ class MIPSCodeGenVisitor:
     def visitMethodDecl(self, ast: MethodDecl, o):
         self.methodSyms.append(Symbol(ast.name.name, MType([], VoidType()), CName(self.currentClassName)))
         self.currentMethodSym = self.methodSyms[-1]
+        is_static = '$' in ast.name.name
+        method_label = self.currentClassName + '_m_' + ast.name.name
 
-
-        self.emit.printout(self.emit.emitLABEL(self.currentClassName + '_m_' + ast.name.name))
+        self.emit.printout(self.emit.emitLABEL(method_label))
         
         # Count total num of var (including in sub-bodies)
         def count_local_var(ast):
@@ -138,18 +132,23 @@ class MIPSCodeGenVisitor:
                 return 1
             else: 
                 return 0
-        n_var = len(ast.param) + count_local_var(ast.body)
+        n_var = (0 if is_static else 1) + len(ast.param) + count_local_var(ast.body)
 
         self.emit.printout(self.emit.emitFRAMEALLOC(n_var + 2))
 
         frame = o
-        scope = SubBody(frame, [[]] + [self.env])
+        if is_static or self.currentClassName == 'Program':
+            scope = SubBody(frame, [[]] + [self.env])
+        else:
+            scope = SubBody(frame, [[
+                Symbol("Self", ClassType(Id(self.currentClassName)), Index(0))
+            ]] + [self.env])
         for x in ast.param:
             self.visit(x, scope)
         for x in ast.body.inst:
             self.visit(x, scope)
         
-        self.emit.printout(self.emit.emitLABEL('\treturn_' + self.currentClassName + '_m_' + ast.name.name))
+        self.emit.printout(self.emit.emitLABEL('\treturn_' + method_label))
         self.emit.printout(self.emit.emitFRAMERESET(n_var + 2))
 
         if ast.name.name == 'main' and self.currentClassName == 'Program':
@@ -164,12 +163,34 @@ class MIPSCodeGenVisitor:
                 name = self.currentClassName + '_a_' + ast.decl.variable.name
                 typ = ast.decl.varType
                 val = ast.decl.varInit
+                self.attributeSyms.append(Symbol(ast.decl.variable.name, typ, CName(self.currentClassName)))
             else:
                 name = self.currentClassName + '_a_' + ast.decl.constant.name
                 typ = ast.decl.constType
                 val = ast.decl.value
-            self.emit.printvar(self.emit.emitATTRIBUTE(name, typ, val))
-        
+                self.attributeSyms.append(Symbol(ast.decl.constant.name, typ, CName(self.currentClassName)))
+            
+            if isinstance(val, Literal):
+                self.emit.printvar(self.emit.emitATTRIBUTE(name, typ, val.value))
+            else:
+                # Put symbol on data section
+                self.emit.printvar(self.emit.emitATTRIBUTE(name, typ, 0))
+                # Then evaluate on top of text section
+                c, t = self.visit(val, o)
+                self.emit.printfirst(c)
+                self.emit.printfirst(self.emit.emitASSIGNATTR(name, t))
+        else:
+            name = ast.decl.variable.name if isinstance(ast.decl, VarDecl) else ast.decl.constant.name
+            typ = ast.decl.varType if isinstance(ast.decl, VarDecl) else ast.decl.constType
+            idx = len(self.classes[self.currentClassName])
+            self.classes[self.currentClassName][name] = { "index": idx, "type": typ }
+
+
+    def visitBlock(self, ast: Block, o):
+        env = SubBody(o.frame, [[]] + o.sym)
+        for stmt in ast.inst:
+            self.visit(stmt, env)
+    
     
     def visitVarDecl(self, ast: VarDecl, o: SubBody):
         # o: SubBody
@@ -182,6 +203,7 @@ class MIPSCodeGenVisitor:
             self.emit.printout(self.emit.emitSTOREINDEX(idx, typ))
 
         o.sym[0].append(Symbol(ast.variable.name, ast.varType, Index(idx)))
+
 
     def visitConstDecl(self, ast: ConstDecl, o: SubBody):
         # o: SubBody
@@ -196,14 +218,35 @@ class MIPSCodeGenVisitor:
 
 
     def visitAssign(self, ast: Assign, o):
-        rc, _ = self.visit(ast.exp, o)
+        rc, rt = self.visit(ast.exp, o)
         self.emit.printout(rc)
+
+        get_out = False
         for scope in o.sym[:-1]:
+            if get_out: break
             for sym in scope:
+                if get_out: break
                 if isinstance(ast.lhs, Id) and ast.lhs.name == sym.name:
                     index = sym.value.value
                     typ = sym.mtype
                     self.emit.printout(self.emit.emitSTOREINDEX(index, typ))
+                elif isinstance(ast.lhs, FieldAccess):
+                    res = self.emit.emitPUSHACC(rt)
+                    if '$' in ast.lhs.fieldname.name:
+                        code, typ = self.visit(ast.lhs, o)
+                        static_name = ast.lhs.obj.name + '_a_' + ast.lhs.fieldname.name
+                        res += self.emit.emitSTORESTATICATTR(static_name, typ)
+                    elif isinstance(ast.lhs.obj, SelfLiteral) or ast.lhs.obj.name == sym.name:
+                        code, c = self.visit(ast.lhs.obj, o)
+                        res += code
+                        # Get index of field
+                        idx = self.classes[c.classname.name][ast.lhs.fieldname.name]["index"]
+                        typ = self.classes[c.classname.name][ast.lhs.fieldname.name]["type"]
+                        res += self.emit.emitSTOREFIELD(idx, typ)     
+                        get_out = True        
+
+                    res += self.emit.emitPOPSTACK()
+                    self.emit.printout(res)
 
 
     def visitReturn(self, ast: Return, o):
@@ -218,13 +261,39 @@ class MIPSCodeGenVisitor:
     
 
     def visitFieldAccess(self, ast: FieldAccess, o):
-        return '', IntType()
+        if '$' in ast.fieldname.name:
+            static_name = ast.obj.name + '_a_' + ast.fieldname.name
+            for sym in self.attributeSyms:
+                if ast.obj.name == sym.value.value and ast.fieldname.name == sym.name:
+                    typ = sym.mtype
+                    return self.emit.emitLOADSTATICATTR(static_name, typ), typ
+        else:
+            code, c = self.visit(ast.obj, o)
+            offset = self.classes[c.classname.name][ast.fieldname.name]["index"]
+            memtyp = self.classes[c.classname.name][ast.fieldname.name]["type"]
+            code += self.emit.emitLOADFIELD(offset, memtyp)
+            return code, memtyp
 
 
     def visitCallStmt(self, ast: CallStmt, o):
         # Actually calling method other than printing
         result = list()
         idx = 0
+        if not '$' in ast.method.name:
+            if self.currentClassName == 'Program' and isinstance(ast.obj, SelfLiteral):
+                # Program calling its methods, no need for self
+                pass
+            elif isinstance(ast.obj, Id) and ast.obj.name == 'io':
+                # TODO: Global symbols
+                pass
+            else:
+                # Store object pointer
+                code, typ = self.visit(ast.obj, o)
+                result.append(self.emit.emitCOMMENT('Allocate Self pointer'))
+                result.append(code)
+                result.append(self.emit.emitSTOREPARAM(idx, typ))
+                # Allocate space for a self pointer
+                idx += 1
         for arg in ast.param:
             # Pass-by-value, result is in the accumulator
             code, typ = self.visit(arg, o)
@@ -233,16 +302,18 @@ class MIPSCodeGenVisitor:
             result.append(self.emit.emitSTOREPARAM(idx, typ))
             idx += 1
     
-        if ast.method.name == "putInt":
-            result.append(self.emit.emitPUTINT())
-        elif ast.method.name == "putIntLn":
-            result.append(self.emit.emitPUTINTLN())
-        elif ast.method.name == "putFloat":
-            result.append(self.emit.emitPUTFLOAT())
-        elif ast.method.name == "putFloatLn":
-            result.append(self.emit.emitPUTFLOATLN())
+        if isinstance(ast.obj, Id) and ast.obj.name == 'io':
+            if ast.method.name == "putInt":
+                result.append(self.emit.emitPUTINT())
+            elif ast.method.name == "putIntLn":
+                result.append(self.emit.emitPUTINTLN())
+            elif ast.method.name == "putFloat":
+                result.append(self.emit.emitPUTFLOAT())
+            elif ast.method.name == "putFloatLn":
+                result.append(self.emit.emitPUTFLOATLN())
         else:
-            result.append(self.emit.emitJAL(self.currentClassName + '_m_' + ast.method.name))
+            code, typ = self.visit(ast.obj, o)
+            result.append(self.emit.emitJAL(typ.classname.name + '_m_' + ast.method.name))
 
         self.emit.printout(''.join(result))
 
@@ -250,24 +321,36 @@ class MIPSCodeGenVisitor:
     def visitCallExpr(self, ast: CallExpr, o):
         result = list()
         idx = 0
+        if not '$' in ast.method.name:
+            if self.currentClassName == 'Program' and isinstance(ast.obj, SelfLiteral):
+                # Program calling its methods, no need for self
+                pass
+            else:
+                # Store object pointer
+                code, typ = self.visit(ast.obj, o)
+                result.append(self.emit.emitCOMMENT('Allocate Self pointer'))
+                result.append(code)
+                result.append(self.emit.emitSTOREPARAM(idx, typ))
+                # Allocate space for a self pointer
+                idx += 1
         for arg in ast.param:
             # Pass-by-value, result is in the accumulator
             code, typ = self.visit(arg, o)
             # Pre-allocate params before calling method
+            result.append(self.emit.emitCOMMENT('Allocate param'))
             result.append(code)
             result.append(self.emit.emitSTOREPARAM(idx, typ))
             idx += 1
 
-        result.append(self.emit.emitJAL(self.currentClassName + '_m_' + ast.method.name))
+        if '$' in ast.method.name:
+            result.append(self.emit.emitJAL(ast.obj.name + '_m_' + ast.method.name))
+        else:
+            code, typ = self.visit(ast.obj, o)
+            result.append(self.emit.emitJAL(typ.classname.name + '_m_' + ast.method.name))
+
         for sym in self.methodSyms:
             if sym.name == ast.method.name:
                 return ''.join(result), sym.mtype.rettype
-
-
-    def visitBlock(self, ast: Block, o):
-        env = SubBody(o.frame, [[]] + o.sym)
-        for stmt in ast.inst:
-            self.visit(stmt, env)
 
 
     def visitIf(self, ast: If, o):
@@ -294,6 +377,7 @@ class MIPSCodeGenVisitor:
         o.frame.enterLoop()
         cont = 'Cont{}'.format(o.frame.getContinueLabel())
         brk = 'Break{}'.format(o.frame.getBreakLabel())
+        comp = 'Comp{}'.format(o.frame.getNewLabel())
 
         # Save result on STACK, not TOP OF STACK
         self.emit.printout(''.join([
@@ -305,7 +389,7 @@ class MIPSCodeGenVisitor:
         lblInc = 'Label{}'.format(o.frame.getNewLabel())
         lblDec = 'Label{}'.format(o.frame.getNewLabel())
         self.emit.printout(''.join([
-            self.emit.emitLABEL(cont),
+            self.emit.emitLABEL(comp),
             # Evaluate stack, if false jump to lblDec
             self.emit.emitLOADSTACKTOACC(),
             self.emit.emitIFFALSE(lblDec),
@@ -323,6 +407,7 @@ class MIPSCodeGenVisitor:
         # Increment
         lblIncr = 'Label{}'.format(o.frame.getNewLabel())
         lblDecr = 'Label{}'.format(o.frame.getNewLabel())
+        self.emit.printout(self.emit.emitLABEL(cont))
         self.emit.printout(self.emit.emitLOADSTACKTOACC())
         self.emit.printout(self.emit.emitIFFALSE(lblDecr))
         self.visit(Assign(ast.id, BinaryOp('+', ast.id, ast.expr3)), o)
@@ -330,12 +415,34 @@ class MIPSCodeGenVisitor:
         self.emit.printout(self.emit.emitLABEL(lblDecr))
         self.visit(Assign(ast.id, BinaryOp('-', ast.id, ast.expr3)), o)
         self.emit.printout(self.emit.emitLABEL(lblIncr))
-        self.emit.printout(self.emit.emitJ(cont))
+        self.emit.printout(self.emit.emitJ(comp))
 
         # Exit loop
         self.emit.printout(self.emit.emitLABEL(brk))
         self.emit.printout(self.emit.emitPOPSTACK())
         o.frame.exitLoop()
+
+
+    def visitBreak(self, ast: Break, o):
+        self.emit.printout(self.emit.emitJ("Break{}".format(o.frame.getBreakLabel())))
+
+
+    def visitContinue(self, ast: Continue, o):
+        self.emit.printout(self.emit.emitJ("Cont{}".format(o.frame.getContinueLabel())))
+
+
+    def visitSelfLiteral(self, ast: SelfLiteral, o):
+        # When calling instance method, pointer of self
+        # must be at the first index (0)
+        return self.emit.emitLOADINDEX(0, ClassType(Id(self.currentClassName))), ClassType(Id(self.currentClassName))
+
+
+    def visitNewExpr(self, ast: NewExpr, o):
+        ast.param
+        # Figure out how much memory needs to be allocated
+        size = len(self.classes[ast.classname.name]) * 4
+        # Allocate memory
+        return self.emit.emitNEW(size), ClassType(Id(ast.classname.name))
 
 
     def visitBinaryOp(self, ast: BinaryOp, o):
@@ -403,3 +510,6 @@ class MIPSCodeGenVisitor:
     def visitStringLiteral(self, ast: StringLiteral, o):
         content = ast.value
         return "Not implemented\n", StringType()
+
+    def visitNullLiteral(self, ast: NullLiteral, o):
+        return self.emit.emitLOADACC(0), IntType()
