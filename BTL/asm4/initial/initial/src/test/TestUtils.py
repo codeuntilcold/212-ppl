@@ -183,7 +183,7 @@ class TestCodeGen():
             
             subprocess.call("java  -jar "+ JASMIN_JAR + " " + path + "/D96Class.j",shell=True,stderr=subprocess.STDOUT)
             
-            subprocess.run("java -cp ./lib:. D96Class",shell=True, stdout = f, timeout=10)
+            subprocess.run("java -cp ./lib;. D96Class",shell=True, stdout = f, timeout=10)
         except StaticError as e:
             f.write(str(e))
         except subprocess.TimeoutExpired:

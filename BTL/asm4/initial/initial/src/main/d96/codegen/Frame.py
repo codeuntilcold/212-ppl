@@ -1,3 +1,4 @@
+from CodeGenError import *
 from Utils import *
 
 class Frame():
@@ -171,6 +172,6 @@ class Frame():
     *   @return an integer representing the break label
     '''
     def getBreakLabel(self):
-        if not brkLabel:
+        if not self.brkLabel:
             raise IllegalRuntimeException("None break label")
         return self.brkLabel[-1]

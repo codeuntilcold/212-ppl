@@ -1,6 +1,7 @@
 from Utils import *
 from StaticCheck import *
 from StaticError import *
+from CodeGenError import *
 import CodeGenerator as cgen
 from MachineCode import JasminCode
 
@@ -44,7 +45,7 @@ class Emitter():
         #in: Int or Sring
         #frame: Frame
         
-        frame.push();
+        frame.push()
         if type(in_) is int:
             i = in_
             if i >= -1 and i <=5:
@@ -148,6 +149,8 @@ class Emitter():
         frame.push()
         if type(inType) is IntType:
             return self.jvm.emitILOAD(index)
+        elif type(inType) is FloatType:
+            return self.jvm.emitFLOAD(index)
         elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
             return self.jvm.emitALOAD(index)
         else:
@@ -178,8 +181,10 @@ class Emitter():
         
         frame.pop()
 
-        if type(inType) is IntType:
+        if type(inType) is IntType or type(inType) is BoolType:
             return self.jvm.emitISTORE(index)
+        elif type(inType) is FloatType:
+            return self.jvm.emitFSTORE(index)
         elif type(inType) is cgen.ArrayPointerType or type(inType) is cgen.ClassType or type(inType) is StringType:
             return self.jvm.emitASTORE(index)
         else:
@@ -208,7 +213,7 @@ class Emitter():
         #isFinal: Boolean
         #value: String
 
-        return self.jvm.emitSTATICFIELD(lexeme, self.getJVMType(in_), false)
+        return self.jvm.emitSTATICFIELD(lexeme, self.getJVMType(in_), False)
 
     def emitGETSTATIC(self, lexeme, in_, frame):
         #lexeme: String
@@ -311,15 +316,15 @@ class Emitter():
         #in_: Type
         #frame: Frame
 
-        label1 = frame.getNewLabel()
-        label2 = frame.getNewLabel()
+        label1 = str(frame.getNewLabel())
+        label2 = str(frame.getNewLabel())
         result = list()
-        result.append(emitIFTRUE(label1, frame))
-        result.append(emitPUSHCONST("true", in_, frame))
-        result.append(emitGOTO(label2, frame))
-        result.append(emitLABEL(label1, frame))
-        result.append(emitPUSHCONST("false", in_, frame))
-        result.append(emitLABEL(label2, frame))
+        result.append(self.emitIFTRUE(label1, frame))
+        result.append(self.emitPUSHCONST("true", in_, frame))
+        result.append(self.emitGOTO(label2, frame))
+        result.append(self.emitLABEL(label1, frame))
+        result.append(self.emitPUSHCONST("false", in_, frame))
+        result.append(self.emitLABEL(label2, frame))
         return ''.join(result)
 
     '''
@@ -407,8 +412,8 @@ class Emitter():
         #..., value1, value2 -> ..., result
 
         result = list()
-        labelF = frame.getNewLabel()
-        labelO = frame.getNewLabel()
+        labelF = str(frame.getNewLabel())
+        labelO = str(frame.getNewLabel())
 
         frame.pop()
         frame.pop()
@@ -573,11 +578,16 @@ class Emitter():
         #in_: Type
         #frame: Frame
 
-        if type(in_) is IntType:
-            frame.pop()
-            return self.jvm.emitIRETURN()
-        elif type(in_) is VoidType:
+        if type(in_) is VoidType:
             return self.jvm.emitRETURN()
+        else:
+            frame.pop()
+            if type(in_) is IntType:
+                return self.jvm.emitIRETURN()
+            elif type(in_) is FloatType:
+                return self.jvm.emitFRETURN()
+            else:
+                return self.jvm.emitARETURN()
 
     ''' generate code that represents a label	
     *   @param label the label
@@ -626,7 +636,11 @@ class Emitter():
 
     def emitEPILOG(self):
         file = open(self.filename, "w")
-        file.write(''.join(self.buff))
+        try:
+            file.write(''.join(self.buff))
+        except:
+            for line in self.buff:
+                print(line if line else 'None\n', end='')
         file.close()
 
     ''' print out the code to screen
@@ -640,8 +654,9 @@ class Emitter():
     def clearBuff(self):
         self.buff.clear()
 
+    def replace(self, a, b):
+        for i, line in enumerate(self.buff):
+            if line == a: self.buff[i] = b
 
-
-
-
-        
+    def emitNULL(self):
+        return "\taconst_null\n"
