@@ -470,18 +470,18 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     expect = "12"
     #     self.assertTrue(TestCodeGen.test(input,expect,530))
 
-    # def test_531(self):
-    #     input = """Class Program {
-    #         Val $PI: Float = 3.14;
-    #         Val $2PI: Float = 6.28;
-    #         main() {
-    #             Var radius: Int = 5;
-    #             Var circum: Float = radius * Program::$2PI;
-    #             io.putFloat(circum);
-    #         }
-    #     }"""
-    #     expect = "31.400002"
-    #     self.assertTrue(TestCodeGen.test(input,expect,531))
+    def test_531(self):
+        input = """Class Program {
+            Val $PI: Float = 3.14;
+            Val $2PI: Float = 6.28;
+            main() {
+                Var radius: Int = 5;
+                Var circum: Float = radius * Program::$2PI;
+                io.putFloat(circum);
+            }
+        }"""
+        expect = "31.400002"
+        self.assertTrue(TestCodeGen.test(input,expect,531))
 
     # def test_532(self):
     #     input = """Class Program {
@@ -544,80 +544,80 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     expect = "78.5"
     #     self.assertTrue(TestCodeGen.test(input,expect,535))
 
-    # def test_536(self):
-    #     input = """Class Program {
-    #         main() {
-    #             Var i: Int;
-    #             Foreach(i In 0 .. 9) {
-    #                 If (i <= 5) {
-    #                     io.putInt(i);
-    #                 }
-    #                 Else {
-    #                     Break;
-    #                 }
-    #             }
-    #         }
-    #     }"""
-    #     expect = "012345"
-    #     self.assertTrue(TestCodeGen.test(input,expect,536))
+    def test_536(self):
+        input = """Class Program {
+            main() {
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        io.putInt(i);
+                    }
+                    Else {
+                        Break;
+                    }
+                }
+            }
+        }"""
+        expect = "012345"
+        self.assertTrue(TestCodeGen.test(input,expect,536))
 
-    # def test_537(self):
-    #     input = """Class Program {
-    #         main() {
-    #             Var i: Int;
-    #             Foreach(i In 0 .. 9) {
-    #                 If (i <= 5) {
-    #                     Continue;
-    #                 }
-    #                 Else {
-    #                     io.putInt(i);
-    #                 }
-    #             }
-    #         }
-    #     }"""
-    #     expect = "6789"
-    #     self.assertTrue(TestCodeGen.test(input,expect,537))
+    def test_537(self):
+        input = """Class Program {
+            main() {
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        Continue;
+                    }
+                    Else {
+                        io.putInt(i);
+                    }
+                }
+            }
+        }"""
+        expect = "6789"
+        self.assertTrue(TestCodeGen.test(input,expect,537))
 
-    # def test_538(self):
-    #     input = """Class Program {
-    #         main() {
-    #             Var i: Int;
-    #             Foreach(i In 0 .. 9) {
-    #                 If (i <= 5) {
-    #                     Break;
-    #                     io.putInt(i);
-    #                 }
-    #                 Else {
-    #                     io.putInt(i);
-    #                 }
-    #             }
-    #         }
-    #     }"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,538))
+    def test_538(self):
+        input = """Class Program {
+            main() {
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        Break;
+                        io.putInt(i);
+                    }
+                    Else {
+                        io.putInt(i);
+                    }
+                }
+            }
+        }"""
+        expect = ""
+        self.assertTrue(TestCodeGen.test(input,expect,538))
 
-    # def test_539(self):
-    #     input = """Class Program {
-    #         main() {
-    #             Var i: Int;
-    #             Foreach(i In 0 .. 9) {
-    #                 If (i <= 5) {
-    #                     If (i % 2 == 0) {
-    #                         io.putInt(i);
-    #                     }
-    #                     Else {
-    #                         Continue;
-    #                     }
-    #                     io.putInt(i);
-    #                 }
-    #                 Else {
-    #                     Break;
-    #                 }
-    #             }
-    #         }
-    #     }"""
-    #     expect = "002244"
-    #     self.assertTrue(TestCodeGen.test(input,expect,539))
+    def test_539(self):
+        input = """Class Program {
+            main() {
+                Var i: Int;
+                Foreach(i In 0 .. 9) {
+                    If (i <= 5) {
+                        If (i % 2 == 0) {
+                            io.putInt(i);
+                        }
+                        Else {
+                            Continue;
+                        }
+                        io.putInt(i);
+                    }
+                    Else {
+                        Break;
+                    }
+                }
+            }
+        }"""
+        expect = "002244"
+        self.assertTrue(TestCodeGen.test(input,expect,539))
 
     # def test_540(self):
     #     input = """
@@ -860,44 +860,89 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     expect = "600\n"
     #     self.assertTrue(TestCodeGen.test(input,expect,549))
 
-    # def test_550(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,550))
+    def test_550(self):
+        input = """Class Program {
+            main() {
+                Var a: Boolean = True || (1 / 0 == 2);
+                Var b: Boolean = False && (1 / 0 == 2);
+                io.putBool(a);
+            }
+        }"""
+        expect = "true"
+        self.assertTrue(TestCodeGen.test(input,expect,550))
 
-    # def test_551(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,551))
+    def test_551(self):
+        input = """Class Program {
+            main() {
+                Var a: Array[Int, 2];
+            }
+        }"""
+        expect = ""
+        self.assertTrue(TestCodeGen.test(input,expect,551))
 
-    # def test_552(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,552))
+    def test_552(self):
+        input = """Class Program {
+            main() {
+                Var a: Array[Int, 2];
+                io.putIntLn(a[0]);
+                a[0] = 27 + 56;
+                io.putInt(a[0]);
+            }
+        }"""
+        expect = "0\n83"
+        self.assertTrue(TestCodeGen.test(input,expect,552))
 
-    # def test_553(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,553))
+    def test_553(self):
+        input = """Class Program {
+            main() {
+                Var a: Array[Int, 2] = Array(5, 7);
+                io.putInt(a[1]);
+            }
+        }"""
+        expect = "7"
+        self.assertTrue(TestCodeGen.test(input,expect,553))
 
-    # def test_554(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,554))
+    def test_554(self):
+        input = """Class Program {
+            main() {
+                Var a: Array[Int, 2] = Array(5, 5 + 2);
+                a[1] = 0;
+                a[0] = a[1] + 1;
+                io.putInt(a[0]);
+                io.putInt(a[1]);
+            }
+        }"""
+        expect = "10"
+        self.assertTrue(TestCodeGen.test(input,expect,554))
 
-    # def test_555(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,555))
+    def test_555(self):
+        input = """Class Program {
+            main() {
+                Var a: Array[Array[Int, 3], 5];
+            }
+        }"""
+        expect = ""
+        self.assertTrue(TestCodeGen.test(input,expect,555))
 
     # def test_556(self):
-    #     input = """"""
-    #     expect = ""
+    #     input = """Class Program {
+    #         main() {
+    #             Var a: Array[Array[Int, 5], 2];
+    #             io.putInt(a[1][3]);
+    #         }
+    #     }"""
+    #     expect = "0"
     #     self.assertTrue(TestCodeGen.test(input,expect,556))
 
     # def test_557(self):
-    #     input = """"""
-    #     expect = ""
+    #     input = """Class Program {
+    #         main() {
+    #             Var a: Array[Array[Int, 5], 2];
+    #             a[1][3] = 7;
+    #             io.putInt(a[1][3]);
+    #         }
+    #     }"""
+    #     expect = "7"
     #     self.assertTrue(TestCodeGen.test(input,expect,557))
 
     # def test_558(self):
@@ -906,7 +951,14 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     self.assertTrue(TestCodeGen.test(input,expect,558))
 
     # def test_559(self):
-    #     input = """"""
+    #     input = """Class Program {
+    #         main() {
+    #             Var a: Array[Array[Int, 5], 2] = Array(
+    #                 Array(5, 3, 1, 4), 
+    #                 Array(3, 5, 7, 4)
+    #             );
+    #         }
+    #     }"""
     #     expect = ""
     #     self.assertTrue(TestCodeGen.test(input,expect,559))
 
