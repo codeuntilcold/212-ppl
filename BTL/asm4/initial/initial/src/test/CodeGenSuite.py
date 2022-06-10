@@ -9,7 +9,7 @@ class CheckCodeGenSuite(unittest.TestCase):
         input = Program([
             ClassDecl(Id("Program"), [
                 MethodDecl(Static(), Id("main"),[],Block([
-                    CallStmt(Id("io"), Id("putInt"),[
+                    CallStmt(Id("io"), Id("$writeInt"),[
                         BinaryOp("+", 
                             IntLiteral(20),
                             IntLiteral(30)
@@ -25,7 +25,7 @@ class CheckCodeGenSuite(unittest.TestCase):
         input = Program([
             ClassDecl(Id("Program"), [
                 MethodDecl(Static(), Id("main"),[],Block([
-                    CallStmt(Id("io"), Id("putInt"),[
+                    CallStmt(Id("io"), Id("$writeInt"),[
                         BinaryOp("+", 
                             IntLiteral(20),
                             BinaryOp("+", 
@@ -44,7 +44,7 @@ class CheckCodeGenSuite(unittest.TestCase):
         input = Program([
             ClassDecl(Id("Program"), [
                 MethodDecl(Static(), Id("main"),[],Block([
-                    CallStmt(Id("io"), Id("putFloat"),[
+                    CallStmt(Id("io"), Id("$writeFloat"),[
                         BinaryOp("+",
                             IntLiteral(10),    
                             BinaryOp("+", 
@@ -62,7 +62,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_503(self):
         input = """Class Program {
             main() {
-                io.putInt(20);
+                io::$writeInt(20);
             }
         }"""
         expect = "20"
@@ -71,7 +71,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_504(self):
         input = """Class Program {
             main() {
-                io.putInt(15 + 20);
+                io::$writeInt(15 + 20);
             }
         }"""
         expect = "35"
@@ -80,7 +80,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_505(self):
         input = """Class Program {
             main() {
-                io.putFloat(1.5 + 3.5);
+                io::$writeFloat(1.5 + 3.5);
             }
         }"""
         expect = "5.0"
@@ -89,7 +89,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_506(self):
         input = """Class Program {
             main() {
-                io.putIntLn(50 - 35 - 5);
+                io::$writeIntLn(50 - 35 - 5);
             }
         }
         """
@@ -102,7 +102,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Var a: Int = 507;
                 Var b: Int = 508;
                 a = b;
-                io.putInt(a);
+                io::$writeInt(a);
             }
         }"""
         expect = "508"
@@ -115,8 +115,8 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Var y: Int;
                 x = 10;
                 y = 2;
-                io.putInt(x - (2 + y));
-                io.putInt(x + x - y + x);
+                io::$writeInt(x - (2 + y));
+                io::$writeInt(x + x - y + x);
             }
         }"""
         expect = "628"
@@ -127,7 +127,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             main() {
                 Var a: Float = 10.0;
                 Var b: Float;
-                io.putFloat(50 - a - 10);
+                io::$writeFloat(50 - a - 10);
             }
         }
         """
@@ -139,9 +139,9 @@ class CheckCodeGenSuite(unittest.TestCase):
             main() {
                 Var a: Int = 7;
                 Var b: Float = 5.0;
-                io.putIntLn(-5 * 7);
-                io.putFloatLn(a * b);
-                io.putFloat(a / b);
+                io::$writeIntLn(-5 * 7);
+                io::$writeFloatLn(a * b);
+                io::$writeFloat(a / b);
             }
         }"""
         expect = "-35\n35.0\n1.4"
@@ -150,14 +150,14 @@ class CheckCodeGenSuite(unittest.TestCase):
     def test_511(self):
         input = """Class Program {
             no_param_four() { 
-                io.putIntLn(26);
+                io::$writeIntLn(26);
                 Return 4;
             }
             main() {
                 Var x: Int = 10;
-                io.putIntLn(x);
+                io::$writeIntLn(x);
                 x = Self.no_param_four();
-                io.putInt(x);
+                io::$writeInt(x);
             }
         }"""
         expect = "10\n26\n4"
@@ -172,7 +172,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             main() {
                 Var x, y: Int = 10, 2;
                 x = Self.f(x + y);
-                io.putInt(x);
+                io::$writeInt(x);
             }
         }
         """
@@ -184,14 +184,14 @@ class CheckCodeGenSuite(unittest.TestCase):
         Class Program {
             sumWithBias(a, b, c: Int) {
                 Var bias: Int = -10;
-                io.putIntLn(a);
-                io.putIntLn(b);
-                io.putIntLn(c);
+                io::$writeIntLn(a);
+                io::$writeIntLn(b);
+                io::$writeIntLn(c);
                 Return a + b + c + bias;
             }
             main() {
                 Var x: Int = Self.sumWithBias(20, 30, 40) + 10;
-                io.putInt(x);
+                io::$writeInt(x);
             }
         }"""
         expect = "20\n30\n40\n90"
@@ -201,15 +201,15 @@ class CheckCodeGenSuite(unittest.TestCase):
         input = """
         Class Program {
             times_f(a, b, c: Float) {
-                io.putFloatLn(a);
-                io.putFloatLn(b);
-                io.putFloatLn(c);
+                io::$writeFloatLn(a);
+                io::$writeFloatLn(b);
+                io::$writeFloatLn(c);
                 Return a * b * c;
             }
             main() {
                 Var x, y: Float = 10.0, 2.0;
                 x = Self.times_f(x, y, 1.0);
-                io.putFloat(x);
+                io::$writeFloat(x);
             }
         }"""
         expect = "10.0\n2.0\n1.0\n20.0"
@@ -219,9 +219,9 @@ class CheckCodeGenSuite(unittest.TestCase):
         input = """
         Class Program {
             main() {
-                io.putIntLn(True);
-                io.putIntLn(5 == 3);
-                io.putInt(5 != 3);
+                io::$writeIntLn(True);
+                io::$writeIntLn(5 == 3);
+                io::$writeInt(5 != 3);
             }
         }
         """
@@ -245,7 +245,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 }
             }
             main() {
-                io.putInt(Self.returnWhat());
+                io::$writeInt(Self.returnWhat());
             }
         }"""
         expect = "5"
@@ -270,7 +270,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Return 6;
             }
             main() {
-                io.putInt(Self.returnWhat());
+                io::$writeInt(Self.returnWhat());
             }
         }"""
         expect = "127"
@@ -289,7 +289,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             }
             main() {
                 Var x: Int = Self.sumTo(10);
-                io.putInt(x);
+                io::$writeInt(x);
             }
         }"""
         expect = "55"
@@ -300,7 +300,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             main() {
                 Var item: Int;
                 Foreach(item In 0 .. 10 By 2) {
-                    io.putInt(item);
+                    io::$writeInt(item);
                 }
             }
         }"""
@@ -314,8 +314,8 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Var item: Int;
                 Foreach(item In 0 .. 10 By 2) {
                     Var next: Int = item + 1;
-                    io.putInt(item);
-                    io.putInt(next);
+                    io::$writeInt(item);
+                    io::$writeInt(next);
                 }
             }
         }
@@ -329,7 +329,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             main() {
                 Var item: Int;
                 Foreach(item In 10 .. 0 By 2) {
-                    io.putInt(item);
+                    io::$writeInt(item);
                 }
             }
         }"""
@@ -343,7 +343,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Var start, end: Int = 10, 15;
                 Var item: Int;
                 Foreach(item In start .. end) {
-                    io.putInt(item);
+                    io::$writeInt(item);
                 }
             }
             main() {
@@ -359,7 +359,7 @@ class CheckCodeGenSuite(unittest.TestCase):
         Class Program {
             main() {
                 Var x: Float = 5 * 3 + 7 * 1.5;
-                io.putFloat(x);
+                io::$writeFloat(x);
             }
         }
         """
@@ -372,11 +372,11 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Var x: Boolean = 2 + 3 > 5;
                 If (x) {
                     Var y: Int = 5 + 2;
-                    io.putInt(y);
+                    io::$writeInt(y);
                 }
                 Else {
                     Var z: Int = 7 + 5;
-                    io.putInt(z);
+                    io::$writeInt(z);
                 }
             }
         }"""
@@ -392,7 +392,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 If (max < c) { max = c; }
                 If (max < d) { max = d; }
                 If (max < e) { max = e; }
-                io.putInt(max);
+                io::$writeInt(max);
             }
         }"""
         expect = "15"
@@ -407,7 +407,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 If (max < c) { Var max: Int = c; }
                 If (max < d) { Var max: Int = d; }
                 If (max < e) { Var max: Int = e; }
-                io.putInt(max);
+                io::$writeInt(max);
             }
         }"""
         expect = "-3"
@@ -426,7 +426,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 If (Self.greater(c, max)) { max = c; }
                 If (Self.greater(d, max)) { max = d; }
                 If (Self.greater(e, max)) { max = e; }
-                io.putInt(max);
+                io::$writeInt(max);
             }
         }"""
         expect = "15"
@@ -436,7 +436,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     input = """Class Program {
     #         main() {
     #             Var a: String = "You are amazing";
-    #             io.putString(a);
+    #             io::$writeString(a);
     #         }
     #     }"""
     #     expect = "You are amazing"
@@ -447,7 +447,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #         main() {
     #             Var a: String = "You are amazing";
     #             a = a +. ", put up the work!";
-    #             io.putString(a);
+    #             io::$writeString(a);
     #         }
     #     }"""
     #     expect = "You are amazing, put up the work!"
@@ -459,11 +459,11 @@ class CheckCodeGenSuite(unittest.TestCase):
     #             Var x: Boolean = "You" ==. "You";
     #             If (x) {
     #                 Var y: Int = 5 + 2;
-    #                 io.putInt(y);
+    #                 io::$writeInt(y);
     #             }
     #             Else {
     #                 Var z: Int = 7 + 5;
-    #                 io.putInt(z);
+    #                 io::$writeInt(z);
     #             }
     #         }
     #     }"""
@@ -477,7 +477,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             main() {
                 Var radius: Int = 5;
                 Var circum: Float = radius * Program::$2PI;
-                io.putFloat(circum);
+                io::$writeFloat(circum);
             }
         }"""
         expect = "31.400002"
@@ -490,7 +490,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #         main() {
     #             Var radius: Int = 5;
     #             Var circum: Float = radius * Program::$2PI;
-    #             io.putFloat(circum);
+    #             io::$writeFloat(circum);
     #         }
     #     }"""
     #     expect = "31.400002"
@@ -505,7 +505,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #         main() {
     #             Var radius: Int = 5;
     #             Var area: Float = radius * radius * Program::$PI;
-    #             io.putFloat(area);
+    #             io::$writeFloat(area);
     #         }
     #     }"""
     #     expect = "78.5"
@@ -521,7 +521,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #         main() {
     #             Var radius: Int = 5;
     #             Var area: Float = radius * radius * Pi::$value();
-    #             io.putFloat(area);
+    #             io::$writeFloat(area);
     #         }
     #     }"""
     #     expect = "78.5"
@@ -538,7 +538,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #         main() {
     #             Var radius: Int = 5;
     #             Var area: Float = radius * radius * Pi::$value();
-    #             io.putFloat(area);
+    #             io::$writeFloat(area);
     #         }
     #     }"""
     #     expect = "78.5"
@@ -550,7 +550,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Var i: Int;
                 Foreach(i In 0 .. 9) {
                     If (i <= 5) {
-                        io.putInt(i);
+                        io::$writeInt(i);
                     }
                     Else {
                         Break;
@@ -570,7 +570,7 @@ class CheckCodeGenSuite(unittest.TestCase):
                         Continue;
                     }
                     Else {
-                        io.putInt(i);
+                        io::$writeInt(i);
                     }
                 }
             }
@@ -585,10 +585,10 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Foreach(i In 0 .. 9) {
                     If (i <= 5) {
                         Break;
-                        io.putInt(i);
+                        io::$writeInt(i);
                     }
                     Else {
-                        io.putInt(i);
+                        io::$writeInt(i);
                     }
                 }
             }
@@ -603,12 +603,12 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Foreach(i In 0 .. 9) {
                     If (i <= 5) {
                         If (i % 2 == 0) {
-                            io.putInt(i);
+                            io::$writeInt(i);
                         }
                         Else {
                             Continue;
                         }
-                        io.putInt(i);
+                        io::$writeInt(i);
                     }
                     Else {
                         Break;
@@ -627,9 +627,9 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     Class Program {
     #         main() {
     #             Var a: Integer = New Integer();
-    #             io.putIntLn(a.value);
+    #             io::$writeIntLn(a.value);
     #             a.value = 540;
-    #             io.putInt(a.value);
+    #             io::$writeInt(a.value);
     #         }
     #     }"""
     #     expect = "0\n540"
@@ -643,13 +643,13 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     Class Program {
     #         main() {
     #             Var a: Integer = New Integer();
-    #             io.putIntLn(a.value);
-    #             io.putIntLn(Integer::$numOfInt);
+    #             io::$writeIntLn(a.value);
+    #             io::$writeIntLn(Integer::$numOfInt);
                 
     #             a.value = 540;
     #             Integer::$numOfInt = Integer::$numOfInt + 1;
-    #             io.putIntLn(a.value);
-    #             io.putIntLn(Integer::$numOfInt);
+    #             io::$writeIntLn(a.value);
+    #             io::$writeIntLn(Integer::$numOfInt);
     #         }
     #     }"""
     #     expect = "0\n0\n540\n1\n"
@@ -662,13 +662,13 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     Class Program {
     #         main() {
     #             Var a: Rect = New Rect();
-    #             io.putIntLn(a.length);
-    #             io.putIntLn(a.width);
+    #             io::$writeIntLn(a.length);
+    #             io::$writeIntLn(a.width);
                 
     #             a.length = 540;
     #             a.width = a.width + 1;
-    #             io.putIntLn(a.length);
-    #             io.putIntLn(a.width);
+    #             io::$writeIntLn(a.length);
+    #             io::$writeIntLn(a.width);
     #         }
     #     }"""
     #     expect = "0\n0\n540\n1\n"
@@ -687,12 +687,12 @@ class CheckCodeGenSuite(unittest.TestCase):
     #             Var a: Rect = New Rect();
     #             a.length = 30;
     #             a.width = 20;
-    #             io.putIntLn(a.length);
-    #             io.putIntLn(a.width);
+    #             io::$writeIntLn(a.length);
+    #             io::$writeIntLn(a.width);
                 
     #             Var s: Square = New Square();
     #             s.size = 50;
-    #             io.putIntLn(s.size);
+    #             io::$writeIntLn(s.size);
     #         }
     #     }"""
     #     expect = "30\n20\n50\n"
@@ -717,7 +717,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #             Var a: Rect = New Rect();
     #             a.length = 30;
     #             a.width = 20;
-    #             io.putIntLn(a.area());
+    #             io::$writeIntLn(a.area());
     #         }
     #     }"""
     #     expect = "600\n"
@@ -742,11 +742,11 @@ class CheckCodeGenSuite(unittest.TestCase):
     #             Var a: Rect = New Rect();
     #             a.length = 30;
     #             a.width = 20;
-    #             io.putIntLn(a.area());
+    #             io::$writeIntLn(a.area());
                 
     #             Var s: Square = New Square();
     #             s.length = 50;
-    #             io.putIntLn(s.area());
+    #             io::$writeIntLn(s.area());
     #         }
     #     }"""
     #     expect = "600\n2500\n"
@@ -771,11 +771,11 @@ class CheckCodeGenSuite(unittest.TestCase):
     #             Var a: Rect = New Rect();
     #             a.length = 30.0;
     #             a.width = 20.0;
-    #             io.putFloatLn(a.area());
+    #             io::$writeFloatLn(a.area());
                 
     #             Var s: Square = New Square();
     #             s.length = 50.0;
-    #             io.putFloatLn(s.area());
+    #             io::$writeFloatLn(s.area());
     #         }
     #     }"""
     #     expect = "600.0\n2500.0\n"
@@ -800,11 +800,11 @@ class CheckCodeGenSuite(unittest.TestCase):
     #             a = New Rect();
     #             a.length = 30;
     #             a.width = 20;
-    #             io.putIntLn(a.area());
+    #             io::$writeIntLn(a.area());
                 
     #             Var s: Square = New Square();
     #             s.length = 50;
-    #             io.putIntLn(s.area());
+    #             io::$writeIntLn(s.area());
     #         }
     #     }"""
     #     expect = "600\n2500\n"
@@ -828,9 +828,9 @@ class CheckCodeGenSuite(unittest.TestCase):
     #         main() {
     #             Var a: Rect = New Rect();
     #             a.setl(30);
-    #             io.putIntLn(a.length);
+    #             io::$writeIntLn(a.length);
     #             a.setw(20);
-    #             io.putIntLn(a.width);
+    #             io::$writeIntLn(a.width);
     #         }
     #     }"""
     #     expect = "30\n20\n"
@@ -854,7 +854,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #             Var a: Rect = New Rect();
     #             a.setl(30);
     #             a.setw(20);
-    #             io.putIntLn(a.area());
+    #             io::$writeIntLn(a.area());
     #         }
     #     }"""
     #     expect = "600\n"
@@ -865,7 +865,7 @@ class CheckCodeGenSuite(unittest.TestCase):
             main() {
                 Var a: Boolean = True || (1 / 0 == 2);
                 Var b: Boolean = False && (1 / 0 == 2);
-                io.putBool(a);
+                io::$writeBool(a);
             }
         }"""
         expect = "true"
@@ -884,9 +884,9 @@ class CheckCodeGenSuite(unittest.TestCase):
         input = """Class Program {
             main() {
                 Var a: Array[Int, 2];
-                io.putIntLn(a[0]);
+                io::$writeIntLn(a[0]);
                 a[0] = 27 + 56;
-                io.putInt(a[0]);
+                io::$writeInt(a[0]);
             }
         }"""
         expect = "0\n83"
@@ -896,7 +896,7 @@ class CheckCodeGenSuite(unittest.TestCase):
         input = """Class Program {
             main() {
                 Var a: Array[Int, 2] = Array(5, 7);
-                io.putInt(a[1]);
+                io::$writeInt(a[1]);
             }
         }"""
         expect = "7"
@@ -908,8 +908,8 @@ class CheckCodeGenSuite(unittest.TestCase):
                 Var a: Array[Int, 2] = Array(5, 5 + 2);
                 a[1] = 0;
                 a[0] = a[1] + 1;
-                io.putInt(a[0]);
-                io.putInt(a[1]);
+                io::$writeInt(a[0]);
+                io::$writeInt(a[1]);
             }
         }"""
         expect = "10"
@@ -928,7 +928,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     input = """Class Program {
     #         main() {
     #             Var a: Array[Array[Int, 5], 2];
-    #             io.putInt(a[1][3]);
+    #             io::$writeInt(a[1][3]);
     #         }
     #     }"""
     #     expect = "0"
@@ -939,7 +939,7 @@ class CheckCodeGenSuite(unittest.TestCase):
     #         main() {
     #             Var a: Array[Array[Int, 5], 2];
     #             a[1][3] = 7;
-    #             io.putInt(a[1][3]);
+    #             io::$writeInt(a[1][3]);
     #         }
     #     }"""
     #     expect = "7"
@@ -961,203 +961,3 @@ class CheckCodeGenSuite(unittest.TestCase):
     #     }"""
     #     expect = ""
     #     self.assertTrue(TestCodeGen.test(input,expect,559))
-
-    # def test_560(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,560))
-
-    # def test_561(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,561))
-
-    # def test_562(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,562))
-
-    # def test_563(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,563))
-
-    # def test_564(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,564))
-
-    # def test_565(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,565))
-
-    # def test_566(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,566))
-
-    # def test_567(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,567))
-
-    # def test_568(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,568))
-
-    # def test_569(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,569))
-
-    # def test_570(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,570))
-
-    # def test_571(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,571))
-
-    # def test_572(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,572))
-
-    # def test_573(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,573))
-
-    # def test_574(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,574))
-
-    # def test_575(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,575))
-
-    # def test_576(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,576))
-
-    # def test_577(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,577))
-
-    # def test_578(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,578))
-
-    # def test_579(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,579))
-
-    # def test_580(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,580))
-
-    # def test_581(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,581))
-
-    # def test_582(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,582))
-
-    # def test_583(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,583))
-
-    # def test_584(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,584))
-
-    # def test_585(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,585))
-
-    # def test_586(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,586))
-
-    # def test_587(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,587))
-
-    # def test_588(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,588))
-
-    # def test_589(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,589))
-
-    # def test_590(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,590))
-
-    # def test_591(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,591))
-
-    # def test_592(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,592))
-
-    # def test_593(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,593))
-
-    # def test_594(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,594))
-
-    # def test_595(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,595))
-
-    # def test_596(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,596))
-
-    # def test_597(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,597))
-
-    # def test_598(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,598))
-
-    # def test_599(self):
-    #     input = """"""
-    #     expect = ""
-    #     self.assertTrue(TestCodeGen.test(input,expect,599))

@@ -24,19 +24,19 @@ class CodeGenerator():
 
     def init(self):
         return [
-            Symbol("getInt", MType(list(), IntType()), CName(self.libName)),
-            Symbol("putInt", MType([IntType()], VoidType()), CName(self.libName)),
-            Symbol("putIntLn", MType([IntType()], VoidType()), CName(self.libName)),
+            Symbol("$readInt", MType(list(), IntType()), CName(self.libName)),
+            Symbol("$writeInt", MType([IntType()], VoidType()), CName(self.libName)),
+            Symbol("$writeIntLn", MType([IntType()], VoidType()), CName(self.libName)),
 
-            Symbol("getFloat", MType(list(), FloatType()), CName(self.libName)),
-            Symbol("putFloat", MType([FloatType()], VoidType()), CName(self.libName)),
-            Symbol("putFloatLn", MType([FloatType()], VoidType()), CName(self.libName)),
+            Symbol("$readFloat", MType(list(), FloatType()), CName(self.libName)),
+            Symbol("$writeFloat", MType([FloatType()], VoidType()), CName(self.libName)),
+            Symbol("$writeFloatLn", MType([FloatType()], VoidType()), CName(self.libName)),
 
-            Symbol("putBool", MType([BoolType()], VoidType()), CName(self.libName)),
-            Symbol("putBoolLn", MType([BoolType()], VoidType()), CName(self.libName)),
+            Symbol("$writeBool", MType([BoolType()], VoidType()), CName(self.libName)),
+            Symbol("$writeBoolLn", MType([BoolType()], VoidType()), CName(self.libName)),
 
-            Symbol("putString", MType([StringType()], VoidType()), CName(self.libName)),
-            Symbol("putStringLn", MType([StringType()], VoidType()), CName(self.libName)),
+            Symbol("$writeString", MType([StringType()], VoidType()), CName(self.libName)),
+            Symbol("$writeStringLn", MType([StringType()], VoidType()), CName(self.libName)),
         ]
 
     def gen(self, ast, dir_):
@@ -503,7 +503,10 @@ class CodeGenVisitor(BaseVisitor):
             parCode, _ = self.visit(x, Access(frame, nenv, False, True))
             in_ += parCode
         self.emit.printout(in_)
-        self.emit.printout(self.emit.emitINVOKESTATIC(cname + "/" + ast.method.name, mtype, frame))
+        if cname == "io":
+            method_name = method_name.replace("$write", "put")
+            method_name = method_name.replace("$read", "get")
+        self.emit.printout(self.emit.emitINVOKESTATIC(cname + "/" + method_name, mtype, frame))
 
 
     def visitCallExpr(self, ast: CallExpr, o: Access):
